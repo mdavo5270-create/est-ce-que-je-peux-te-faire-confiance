@@ -89,7 +89,7 @@ Variables d'environnement à définir sur l'hébergeur :
 
 ### Règles d'emplacement des annonces
 
-Elles sont voulues pour rester dans les règles de Google tout en maximisant les impressions : annonces sur les pages de contenu (guide, hub des dilemmes, pages de dilemme, articles), accueil sous le contenu éditorial, et écran de résultats final. Il n'y en a jamais dans la zone de jeu (`#app`), près des boutons de réponse, sur les pages légales ni sur les erreurs 404. Chaque annonce est chargée une seule fois, différée jusqu'à l'approche de l'écran, jamais rafraîchie, et masquée si Google ne la remplit pas. Ne rien changer à ces principes : un clic accidentel ou une incitation au clic peut faire suspendre le compte.
+Elles sont voulues pour rester dans les règles de Google tout en maximisant les impressions : annonces sur les pages de contenu (guide, hub des dilemmes, pages de dilemme, articles), accueil sous le contenu éditorial, et une seule bannière en bas de page pendant la partie (`game-bottom`). Cette bannière est hors de la zone de jeu (`#app`), non collante, séparée des boutons de réponse par un grand espace et chargée une seule fois par visite. Il n'y en a jamais au milieu d'un écran de jeu, en position fixe ou flottante, sur les pages légales ni sur les erreurs 404. Chaque annonce est chargée une seule fois, différée jusqu'à l'approche de l'écran, jamais rafraîchie, et masquée si Google ne la remplit pas. Ne rien changer à ces principes : un clic accidentel ou une incitation au clic peut faire suspendre le compte.
 
 ### Activer la publicité
 

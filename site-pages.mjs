@@ -73,7 +73,7 @@ function layout(ctx, { path, title, description, body, ld = [], robots = "index,
     <meta name="twitter:card" content="summary" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css?v=3" />
-    <link rel="stylesheet" href="/ad.css?v=3" />
+    <link rel="stylesheet" href="/ad.css?v=4" />
     <link rel="stylesheet" href="/content.css?v=1" />
     ${ld.map(jsonLd).join("\n    ")}
   </head>

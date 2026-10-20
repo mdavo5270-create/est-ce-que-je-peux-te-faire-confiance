@@ -93,7 +93,11 @@ test("l'accueil n'a aucun jeton résiduel et aucune annonce dans la zone de jeu"
   assert.match(home.body, /<main id="app" class="main-content" aria-live="polite"><\/main>/);
   assert.match(home.body, /FAQPage/);
   assert.match(home.body, /rel="canonical"/);
-  assert.match(home.body, /data-ad-slot="results"/);
+  assert.match(home.body, /data-ad-slot="game-bottom"/);
+  // la bannière de partie est hors de la zone de jeu, jamais collante
+  assert.ok(home.body.indexOf("game-bottom") > home.body.indexOf("</main>"));
+  const css = readFileSync(new URL("../public/ad.css", import.meta.url), "utf8");
+  assert.ok(!/position:\s*(fixed|sticky)/.test(css));
   const guide = await get(base, "/guide.html");
   assert.ok(!guide.body.includes("{{"));
 });

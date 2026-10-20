@@ -4,7 +4,7 @@
 // 2. slotId    : numéro d'une unité publicitaire « display responsive » (utilisé partout).
 //    Pour suivre chaque position séparément, renseigne `slots` avec un numéro par position :
 //    guide-top, guide-bottom, home-content, hub-top, hub-middle, dilemma-top, dilemma-bottom,
-//    article-top, article-middle, article-bottom, results.
+//    article-top, article-middle, article-bottom, game-bottom.
 // 3. consentConfigured : à passer à true UNIQUEMENT après avoir créé et publié le message de
 //    consentement (Privacy & messaging, certifié TCF) dans le compte AdSense. Tant que cette
 //    valeur est false, aucune annonce n'est chargée.
