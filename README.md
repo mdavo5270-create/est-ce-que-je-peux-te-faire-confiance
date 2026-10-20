@@ -1,7 +1,7 @@
 
 # Est-ce que je peux te faire confiance ?
 
-Une application web en français, pensée pour le téléphone et l'ordinateur. Un hôte prépare une partie et partage le même lien avec autant d'amis que souhaité. Chaque invité répond en privé et découvre son résultat dès qu'il termine; le classement partagé s'enrichit à mesure que les amis finissent.
+Une application web en français, pensée pour le téléphone et l'ordinateur. Un hôte prépare une partie et partage le même lien avec son groupe. Chaque invité répond séparément; seul l'organisateur voit les scores et les réponses détaillées, dès qu'un invité a terminé. Le classement privé s'enrichit ensuite à mesure que les amis finissent.
 
 ## Lancer l'application
 
@@ -22,7 +22,7 @@ Les parties sont enregistrées dans `data/games.json`. Pour choisir un autre por
 3. Après les dilemmes, l'hôte choisit trois questions parmi une banque de 50 et fixe ses propres réponses parmi cinq propositions fixes, sans saisie libre. La question sur la boisson propose l'eau, la bière, le vin, le chocolat chaud ou « Aucune de ces réponses ». Il passe ces questions sur trois écrans distincts, puis voit chaque mise en situation sur son propre écran. Pour chacune, quatre réponses sont proposées : son premier clic marque la priorité; son deuxième clic, sur une réponse différente, marque l'alternative acceptée. Les deux autres réponses valent zéro. Il peut revenir en arrière avant de verrouiller sa préparation.
 4. La préparation est verrouillée. Le même lien d'invitation peut être envoyé à autant d'amis que souhaité; le jeu n'impose pas de nombre maximal et personne n'a besoin de fermer les inscriptions.
 5. Les invités répondent dans cet ordre : question personnelle, situation, dilemme, puis le même cycle deux fois; une quatrième situation termine la partie. Ils choisissent toujours parmi des boutons de réponse prédéfinis : les trois questions personnelles concernent A, et l'invité essaie de deviner ses réponses; dans chaque mise en situation, il choisit ce qu'il ferait pour A. Aucun champ de réponse libre n'est utilisé dans ces phases. Chacun fait face aux trois mêmes dilemmes et répond aux quatre mêmes situations. Le pseudo est mémorisé dans le navigateur; rouvrir le même lien sur cet appareil reprend la session de l'invité.
-6. Dès qu'un invité finit, il voit son résultat et le classement des amis qui ont déjà terminé. L'hôte voit le même classement en direct; il s'actualise à mesure que d'autres invités finissent. Les autres joueurs ne voient pas les choix privés avant d'avoir terminé leur propre partie.
+6. Dès qu'un invité finit, l'organisateur peut consulter son score, le classement et ses réponses détaillées. L'invité voit une confirmation, mais aucun classement ni résultat de groupe. Les autres invités ne voient ni ses choix ni son score. Le classement privé de l'organisateur s'actualise à mesure que d'autres personnes finissent.
 
 Un invité qui ferme la page peut reprendre sa partie en rouvrant le lien sur le même navigateur. Le profil local retient son pseudo et son jeton de session; ce n'est pas un compte récupérable sur un autre appareil. Le lien d'invitation reste ouvert et ne montre aucune réponse.
 
@@ -43,7 +43,7 @@ Ces nombres décrivent uniquement les choix effectués dans cette partie; ils ne
 
 ## Lien de partage
 
-Le nombre d'invités n'est pas limité par le jeu. La capacité réelle dépend des ressources de l'hébergement. Le serveur écoute sur toutes les interfaces. Pour des amis sur le même Wi-Fi, définis `PUBLIC_URL` avec l'adresse locale de l'ordinateur qui héberge le jeu. Pour jouer par Internet, déploie le service derrière HTTPS et définis `PUBLIC_URL` à l'adresse publique.
+Le jeu ne fixe pas de nombre maximal d'invités, mais la capacité réelle dépend des ressources de l'hébergement. Le serveur écoute sur toutes les interfaces. Pour des amis sur le même Wi-Fi, définis `PUBLIC_URL` avec l'adresse locale de l'ordinateur qui héberge le jeu. Pour jouer par Internet, déploie le service derrière HTTPS et définis `PUBLIC_URL` à l'adresse publique.
 
 Exemple PowerShell pour un réseau local :
 
@@ -62,7 +62,7 @@ Les tests couvrent les banques, les règles de score, les invitations multi-amis
 
 ## Publicité et publication
 
-Un emplacement est prévu après le classement. La publicité reste désactivée tant que les champs `clientId` et `resultSlotId` dans `public/ad-config.js` sont vides. Après ouverture et validation d'un compte AdSense et du site, ajoute l'identifiant éditeur (`ca-pub-…`) et l'identifiant de l'unité publicitaire à cet endroit. Le jeu fonctionne en local sans ces identifiants; aucune annonce ne se charge dans cet état.
+Un emplacement est prévu après le classement. La publicité reste désactivée tant que les champs `clientId` et `resultSlotId` dans `public/ad-config.js` sont vides. Après ouverture et validation d'un compte AdSense et du site, ajoute l'identifiant éditeur (`ca-pub-…`) et l'identifiant de l'unité publicitaire à cet endroit. Le jeu fonctionne en local sans ces identifiants; aucune annonce ne se charge dans cet état. L'indice du Serpent n'est pas encore lié à une annonce récompensée : il reste gratuit jusqu'à l'intégration d'un fournisseur compatible.
 
 ## Contenu
 

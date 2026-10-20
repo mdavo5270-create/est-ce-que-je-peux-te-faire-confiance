@@ -120,6 +120,17 @@ test("the invite form submits a named guest and safely handles a missing name", 
   assert.match(client, /if\(!name\)\{document\.querySelector\("#join-error"\)/);
 });
 
+test("participant screens explain when the organizer can see answers and offer a searchable ranking", () => {
+  const client = readFileSync(new URL("../public/app.js", import.meta.url), "utf8");
+  assert.match(client, /L'organisateur verra tes réponses et ton résultat quand tu auras terminé/);
+  assert.match(client, /L'organisateur peut maintenant consulter ton score et le détail de tes réponses/);
+  assert.match(client, /Dès qu'un ami termine, l'hôte voit son résultat/);
+  assert.match(client, /Rechercher un ami/);
+  assert.match(client, /12 premiers inscrits/);
+  assert.match(client, /100 % si vous partagez tous les deux, 25 % si vos choix s'opposent, 0 % si vous volez tous les deux/);
+  assert.doesNotMatch(client, /Tes réponses restent cachées jusqu'à ce que tous les joueurs aient fini/);
+});
+
 test("the browser remembers a player's nickname and resumes their same-device invite session", () => {
   const client = readFileSync(new URL("../public/app.js", import.meta.url), "utf8");
   assert.match(client, /localStorage\.getItem\(storagePrefix\+"profile"\)/);

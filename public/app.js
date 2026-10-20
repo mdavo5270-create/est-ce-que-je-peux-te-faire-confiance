@@ -4,6 +4,7 @@ const leaveButton = document.querySelector("#leave-game");
 const topbarLabel = document.querySelector("#topbar-label");
 const storagePrefix = "trust-game:";
 let identity = null, banks = null, setupState = null, waitingTimer = null, busy = false, toastTimer = null, game = null, resultsSignature = null, pendingSelection = null;
+let resultUiState = { query: "", openGuestId: null };
 const icons = {
   arrow:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
   lock:'<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="2"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>',
@@ -12,6 +13,7 @@ const icons = {
   sparkle:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 15Z"/></svg>'
 };
 function esc(value=""){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function searchText(value=""){return String(value).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase();}
 function storageKey(id,role){return storagePrefix+id+":"+role;}
 function savedProfileName(){try{return JSON.parse(localStorage.getItem(storagePrefix+"profile")||"null")?.name||"";}catch{return "";}}
 function rememberProfileName(name){try{localStorage.setItem(storagePrefix+"profile",JSON.stringify({name}));}catch{}}
@@ -38,7 +40,7 @@ function showHome(error=""){
   <section class="home-grid"><div class="home-copy"><p class="eyebrow">Un jeu de choix à plusieurs</p>
   <h1 class="display-title">Est-ce que je peux<br><em>te faire confiance&nbsp;?</em></h1>
   <p class="lead">Trois dilemmes, trois questions personnelles et quatre situations. Joue, invite plusieurs amis avec le même lien, puis compare les résultats.</p>
-  <div class="home-notes"><span class="note-pill">${icons.dice} 10 étapes</span><span class="note-pill">${icons.people} Invitations sans limite</span><span class="note-pill">${icons.lock} Choix cachés</span></div></div>
+  <div class="home-notes"><span class="note-pill">${icons.dice} 10 étapes</span><span class="note-pill">${icons.people} Un lien pour le groupe</span><span class="note-pill">${icons.lock} Choix cachés</span></div></div>
   <form class="intro-card" id="start-form"><div class="card-kicker"><span>La première étape</span><span class="small-lock">${icons.lock} privé</span></div>
   <h2 class="card-title">Ouvre une partie.</h2><p class="card-copy">Tu choisis tes réponses de référence et les situations. Tes amis répondront séparément, sans voir tes choix.</p>
   <label class="form-label" for="player-name">Ton prénom ou un pseudo</label><input class="text-input" id="player-name" name="name" maxlength="32" autocomplete="nickname" placeholder="Par exemple, Alex" value="${esc(savedProfileName())}" required />
@@ -91,16 +93,16 @@ function scenarioCard(round,role,hint=null){
 }
 function sidePanel(data){
   return `<aside><section class="sidebar-card"><h2 class="side-title">Ta partie</h2>
-  <div class="player-row"><div class="player-info"><span class="avatar">A</span><div><div class="player-name">${esc(data.myName)} <small>(toi)</small></div><div class="player-state">Tes choix sont privés</div></div></div><span class="mini-count">${data.myCompleted}/3</span></div>
+  <div class="player-row"><div class="player-info"><span class="avatar">A</span><div><div class="player-name">${esc(data.myName)} <small>(toi)</small></div><div class="player-state">Tes choix restent cachés aux invités</div></div></div><span class="mini-count">${data.myCompleted}/3</span></div>
   <div class="player-row"><div class="player-info"><span class="avatar alt">${data.guestCount}</span><div><div class="player-name">Amis invités</div><div class="player-state">${data.completedGuests} sur ${data.guestCount} ont terminé</div></div></div><span class="mini-count">${data.guestCount}</span></div></section>
-  <section class="sidebar-card howto-card"><h2 class="side-title">Les 10 étapes</h2><ol class="howto-list"><li><span class="howto-num">1</span><span>A joue ses trois dilemmes puis prépare les questions.</span></li><li><span class="howto-num">2</span><span>Chaque ami répond seul aux mêmes questions, sans voir les clés.</span></li><li><span class="howto-num">3</span><span>Le classement s'ouvre quand tous les invités ont terminé.</span></li></ol></section></aside>`;
+  <section class="sidebar-card howto-card"><h2 class="side-title">Les 10 étapes</h2><ol class="howto-list"><li><span class="howto-num">1</span><span>A joue ses trois dilemmes puis prépare les questions.</span></li><li><span class="howto-num">2</span><span>Chaque ami répond seul aux mêmes questions, sans voir les clés.</span></li><li><span class="howto-num">3</span><span>Dès qu'un ami termine, l'hôte voit son résultat. Le classement évolue au fil des arrivées.</span></li></ol></section></aside>`;
 }
 function renderHostTurn(data){
   const current=data.myRounds.at(-1);
   if(current&&!current.choiceLocked)return `<div class="game-layout"><section class="game-main"><div class="game-heading"><div><p class="eyebrow">À toi, ${esc(data.myName)}</p><h1 class="game-title">Le dilemme ${current.turn}.</h1><p class="game-subtitle">Les dés ont fixé le scénario. Lis les conséquences avant de choisir.</p></div><span class="turn-badge">${current.turn} / 3</span></div>${progressBars(data.myCompleted)}${scenarioCard(current,"A")}</section>${sidePanel(data)}</div>`;
   const turn=data.myCompleted+1;
   return `<div class="game-layout"><section class="game-main"><div class="game-heading"><div><p class="eyebrow">À toi, ${esc(data.myName)}</p><h1 class="game-title">Un choix à la fois.</h1><p class="game-subtitle">Les trois dilemmes monteront progressivement en intensité.</p></div><span class="turn-badge">Dilemme ${turn} / 3</span></div>${progressBars(data.myCompleted)}
-  <section class="game-card"><div class="dice-header"><span>Le prochain scénario</span><span>Deux dés · six faces</span></div>${renderDice(null)}<button class="primary-button full-width" data-action="roll">Lancer les dés ${icons.arrow}</button><p class="locked-note">${icons.lock} Ton choix restera privé jusqu'à la fin de la partie.</p></section></section>${sidePanel(data)}</div>`;
+  <section class="game-card"><div class="dice-header"><span>Le prochain scénario</span><span>Deux dés · six faces</span></div>${renderDice(null)}<button class="primary-button full-width" data-action="roll">Lancer les dés ${icons.arrow}</button><p class="locked-note">${icons.lock} Tes choix restent cachés aux invités.</p></section></section>${sidePanel(data)}</div>`;
 }
 function initSetup(){if(setupState)return;setupState={step:0,personal:Array.from({length:3},(_,i)=>({id:banks.personalQuestions[i].id,answerIndex:null})),situations:Array.from({length:4},(_,i)=>({id:banks.situations[i].id,idealIndex:null,alternativeIndex:null}))};}
 function bankSelect(kind,index,selectedId,items){
@@ -140,20 +142,20 @@ function renderInvite(data){
   const guests=data.guests.length?`<div class="guest-progress-list">${data.guests.map(g=>`<div class="guest-progress-row"><span class="avatar alt">${esc(g.name.slice(0,1).toUpperCase())}</span><strong>${esc(g.name)}</strong><span>${g.completed?"Terminé":g.progress+" / 10 étapes"}</span></div>`).join("")}</div>${data.guestCount>data.guests.length?`<p class="invite-hint">Et ${data.guestCount-data.guests.length} autre${data.guestCount-data.guests.length===1?"":"s"} personne${data.guestCount-data.guests.length===1?"":"s"} inscrite${data.guestCount-data.guests.length===1?"":"s"}.</p>`:""}`:`<p class="waiting-indicator">En attente du premier ami</p>`;
   const link=identity.inviteUrl?`<div class="invite-box"><input class="invite-url" id="invite-url" readonly value="${esc(identity.inviteUrl)}" aria-label="Lien d'invitation"/><button class="secondary-button" data-action="copy-invite">Copier le lien</button></div>`:`<button class="primary-button" data-action="load-invite">Créer le lien ${icons.arrow}</button>`;
   return `<section class="waiting-layout"><div class="waiting-card"><div class="waiting-icon">${icons.people}</div><p class="eyebrow">Tes dilemmes et tes clés sont verrouillés</p>
-  <h1 class="waiting-title">Invite autant d'amis que tu veux.</h1><p class="waiting-copy">Partage le même lien avec ton groupe. Chaque ami découvre son résultat dès qu'il termine; le classement s'actualise à mesure que les autres finissent. Tu n'as rien à clôturer.</p>
-  ${link}${guests}<div class="waiting-indicator">${data.guestCount} ami${data.guestCount===1?"":"s"} inscrit${data.guestCount===1?"":"s"} · ${data.completedGuests} terminé${data.completedGuests===1?"":"s"}</div><p class="invite-hint">Le Serpent du doute donne à chaque invité le même indice, vrai ou inversé, sans modifier son score.</p></div></section>`;
+  <h1 class="waiting-title">Un lien pour tout le groupe.</h1><p class="waiting-copy">Partage le même lien avec tes amis. Il n'y a pas de plafond fixé dans le jeu; la capacité dépend de l'hébergement. Toi, l'organisateur, tu peux consulter chaque résultat dès que la personne termine. Le classement se met à jour automatiquement, sans clôturer les inscriptions.</p>
+  ${link}${guests}${data.guestCount>12?`<p class="invite-hint">Cette liste montre les 12 premiers inscrits. Le classement complet apparaît dans l'écran des résultats.</p>`:""}<div class="waiting-indicator">${data.guestCount} ami${data.guestCount===1?"":"s"} inscrit${data.guestCount===1?"":"s"} · ${data.completedGuests} terminé${data.completedGuests===1?"":"s"}</div><p class="invite-hint">Le Serpent du doute donne à chaque invité le même indice, vrai ou inversé, sans modifier son score.</p></div></section>`;
 }
 function renderJoin(){
   stopWaiting();setTopbar(false);
-  app.innerHTML=`<section class="waiting-layout"><div class="waiting-card"><div class="waiting-icon">${icons.lock}</div><p class="eyebrow">Invitation privée</p><h1 class="waiting-title">Tu as été invité à jouer.</h1><p class="waiting-copy">Entre un prénom ou un pseudo. Tes réponses restent cachées jusqu'à ce que tous les joueurs aient fini.</p>
+  app.innerHTML=`<section class="waiting-layout"><div class="waiting-card"><div class="waiting-icon">${icons.lock}</div><p class="eyebrow">Invitation privée</p><h1 class="waiting-title">Tu as été invité à jouer.</h1><p class="waiting-copy">Tu répondras à 3 dilemmes, 3 questions personnelles et 4 situations. L'organisateur verra tes réponses et ton résultat quand tu auras terminé. Les autres invités ne verront pas tes choix.</p>
   <form id="join-form" class="join-form"><label class="form-label" for="join-name">Ton prénom ou un pseudo</label><input class="text-input" id="join-name" name="name" maxlength="32" autocomplete="nickname" placeholder="Par exemple, Sam" value="${esc(savedProfileName())}" required/><p class="error-message" id="join-error" role="alert"></p><button class="primary-button full-width" type="submit">Rejoindre la partie ${icons.arrow}</button><p class="invite-hint">Ton pseudo sera retenu dans ce navigateur. Rouvre ce lien sur cet appareil pour retrouver cette partie.</p></form></div></section>`;
   document.querySelector("#join-form").addEventListener("submit",joinGame);
 }
 function renderGuestStep(data){
   const step=data.progress+1,p=data.currentPrompt;
-  if(!p)return renderWaiting(data);
+  if(!p)return renderGuestCompleted(data);
   const title=p.type==="dilemma"?"Un choix difficile.":p.type==="personal"?`Connais-tu ${esc(data.otherName)} ?`:`Que ferais-tu pour ${esc(data.otherName)} ?`;
-  const header=`<div class="game-heading"><div><p class="eyebrow">À toi, ${esc(data.myName)}</p><h1 class="game-title">${title}</h1><p class="game-subtitle">Tes réponses sont privées. L'hôte ne verra rien avant la fin de toutes les parties.</p></div><span class="turn-badge">Étape ${step} / 10</span></div>`;
+  const header=`<div class="game-heading"><div><p class="eyebrow">À toi, ${esc(data.myName)}</p><h1 class="game-title">${title}</h1><p class="game-subtitle">L'organisateur ne verra le détail de tes choix qu'après tes 10 réponses. Les autres invités ne les verront pas.</p></div><span class="turn-badge">Étape ${step} / 10</span></div>`;
   if(p.type==="dilemma")return `<div class="game-layout"><section class="game-main">${header}${progressBars(data.progress,10)}${scenarioCard(p.round,"B",p.serpentHint)}</section>${sidePanelGuest(data)}</div>`;
   const q=p.question,selectionKey=`B:${p.type}:${p.index}`,selected=pendingSelection?.key===selectionKey?pendingSelection.value:null;
   return `<section class="guest-question">${header}${progressBars(data.progress,10)}<article class="game-card question-card"><p class="eyebrow">${p.type==="personal"?`Question sur ${esc(data.otherName)}`:"Situation pour l'hôte"} · ${p.index+1} / ${p.type==="personal"?3:4}</p>
@@ -161,14 +163,10 @@ function renderGuestStep(data){
   <div class="guest-options">${q.options.map((option,i)=>`<button type="button" class="guest-option ${selected===i?"selected":""}" aria-pressed="${selected===i}" data-action="select-answer" data-type="${p.type}" data-choice-index="${i}"><span class="option-index">${String.fromCharCode(65+i)}</span><span>${esc(option)}</span><span class="option-arrow">›</span></button>`).join("")}</div>${selected!==null?selectionConfirmation():`<p class="locked-note">${icons.lock} Choisis une réponse, puis confirme pour l'envoyer.</p>`}</article></section>`;
 }
 function renderGuestCompleted(data){
-  return `<section class="waiting-layout"><div class="waiting-card"><div class="waiting-icon">${icons.lock}</div><p class="eyebrow">Tes réponses sont enregistrées</p><h1 class="waiting-title">C'est terminé, ${esc(data.myName)}.</h1><p class="waiting-copy">L'organisateur consulte le classement et le détail des réponses. Cette partie ne révèle pas les résultats des autres participants.</p><div class="waiting-indicator">Ta session est verrouillée</div><div class="result-actions"><button class="primary-button" data-action="new-game">Créer ma partie et inviter mes amis ${icons.arrow}</button></div></div></section>`;
+  return `<section class="waiting-layout"><div class="waiting-card"><div class="waiting-icon">${icons.lock}</div><p class="eyebrow">Tes réponses sont enregistrées</p><h1 class="waiting-title">C'est terminé, ${esc(data.myName)}.</h1><p class="waiting-copy">L'organisateur peut maintenant consulter ton score et le détail de tes réponses. Les autres invités ne voient ni ton résultat ni tes choix.</p><div class="waiting-indicator">Ta session est verrouillée</div><div class="result-actions"><button class="primary-button" data-action="new-game">Créer ma partie et inviter mes amis ${icons.arrow}</button></div></div></section>`;
 }
 function sidePanelGuest(data){
-  return `<aside><section class="sidebar-card"><h2 class="side-title">Ta progression</h2><div class="player-row"><div class="player-info"><span class="avatar alt">${esc(data.myName.slice(0,1).toUpperCase())}</span><div><div class="player-name">${esc(data.myName)} <small>(toi)</small></div><div class="player-state">Tes réponses sont privées</div></div></div><span class="mini-count">${data.progress}/10</span></div><div class="player-row"><div class="player-info"><span class="avatar">A</span><div><div class="player-name">${esc(data.otherName)}</div><div class="player-state">Ses réponses restent cachées</div></div></div><span class="mini-count">•••</span></div></section></aside>`;
-}
-function renderWaiting(data){
-  const status=`${data.completedGuests} / ${data.guestCount} amis ont terminé. Les résultats se révèlent automatiquement à la fin de ta partie.`;
-  return `<section class="waiting-layout"><div class="waiting-card"><div class="waiting-icon">${icons.lock}</div><p class="eyebrow">Tes réponses sont enregistrées</p><h1 class="waiting-title">La révélation attend le groupe.</h1><p class="waiting-copy">${status}</p><div class="waiting-indicator">Ta session est verrouillée</div></div></section>`;
+  return `<aside><section class="sidebar-card"><h2 class="side-title">Ta progression</h2><div class="player-row"><div class="player-info"><span class="avatar alt">${esc(data.myName.slice(0,1).toUpperCase())}</span><div><div class="player-name">${esc(data.myName)} <small>(toi)</small></div><div class="player-state">L'hôte verra tes choix à la fin</div></div></div><span class="mini-count">${data.progress}/10</span></div><div class="player-row"><div class="player-info"><span class="avatar">A</span><div><div class="player-name">${esc(data.otherName)}</div><div class="player-state">Ses réponses restent cachées</div></div></div><span class="mini-count">•••</span></div></section></aside>`;
 }
 function answerReviews(items,kind,guestView=false){
   return `<div class="answer-review-list">${items.map((item,i)=>{
@@ -182,39 +180,53 @@ function renderMatch(match,guestView=false){
   const dilemmas=match.dilemmas.map(item=>`<article class="pair-card"><div class="pair-player"><div class="pair-topline">Dilemme ${item.turn} · ${esc(item.scenario.title)}</div><div class="pair-choice">${esc(item.hostChoice)}</div></div><div class="pair-player"><div class="pair-topline">Réponse de ${esc(match.name)}</div><div class="pair-choice ${item.guestChoice==="VOLER"?"steal":""}">${esc(item.guestChoice)}</div></div><div class="pair-verdict"><span class="verdict-icon ${item.trustPercent!==100?"mixed":""}">${item.trustPercent}%</span>${item.points} / 10 pts</div></article>`).join("");
   return `<article class="match-result"><div class="match-title"><div><p class="eyebrow">Partie de ${esc(match.name)}</p><h2>${s.total}<small> / 100</small></h2></div><span class="result-tag">Résultat de jeu</span></div>
   <div class="score-breakdown"><div><b>${s.dilemmas.points} / 30</b><span>Dilemmes</span></div><div><b>${s.personal.points} / 30</b><span>Personnelles · ${s.personal.correct}/3</span></div><div><b>${s.situations.points} / 40</b><span>Situations · ${s.situations.ideal} idéales, ${s.situations.alternative} alternatives</span></div></div>
-  <div class="result-grid"><article class="metric-card"><div class="metric-label">Coopération · décisions</div><div class="metric-value-row"><span class="metric-value">${match.cooperation.percent}%</span><span class="metric-detail">${match.cooperation.shared} / 6 choix PARTAGER</span></div><p class="metric-caption">Part des six décisions où un joueur a choisi PARTAGER.</p></article>
-  <article class="metric-card trust"><div class="metric-label">Confiance dans cette partie</div><div class="metric-value-row"><span class="metric-value">${match.trust.percent}%</span><span class="metric-detail">${esc(match.trust.label)}</span></div><p class="metric-caption">${esc(match.trust.message)}</p></article></div>
+  <div class="result-grid"><article class="metric-card"><div class="metric-label">Coopération · décisions</div><div class="metric-value-row"><span class="metric-value">${match.cooperation.percent}%</span><span class="metric-detail">${match.cooperation.shared} / 6 choix PARTAGER</span></div><p class="metric-caption">Nombre de PARTAGER parmi les trois choix de l'hôte et les trois tiens.</p></article>
+  <article class="metric-card trust"><div class="metric-label">Confiance dans cette partie</div><div class="metric-value-row"><span class="metric-value">${match.trust.percent}%</span><span class="metric-detail">${esc(match.trust.label)}</span></div><p class="metric-caption">${esc(match.trust.message)} Chaque dilemme vaut 100 % si vous partagez tous les deux, 25 % si vos choix s'opposent, 0 % si vous volez tous les deux. Le chiffre affiché est la moyenne des trois.</p></article></div>
   <details class="formula-details"><summary>Voir les réserves et le détail des dilemmes</summary>${match.trust.reserve.length?`<ul>${match.trust.reserve.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:`<p>Aucun choix divergent ou double VOLER lors de ces dilemmes.</p>`}<div class="pair-list">${dilemmas}</div></details>
   <section class="pair-section"><div class="section-heading"><h2>Réponses personnelles</h2><p>10 points par correspondance</p></div>${answerReviews(match.personal,"personal",guestView)}</section>
   <section class="pair-section"><div class="section-heading"><h2>Mises en situation</h2><p>Idéale 10 · alternative 5 · autre 0</p></div>${answerReviews(match.situations,"situation",guestView)}</section>
   ${match.serpent?`<aside class="serpent-result"><h3>Le Serpent du doute · dilemme ${match.serpent.turn}</h3><p>Il annonçait que A avait choisi <b>${esc(match.serpent.said)}</b>. C'était ${match.serpent.wasTrue?"vrai":"l'inverse"} : A avait choisi <b>${esc(match.serpent.actual)}</b>. L'indice était commun aux amis et ne change aucun point.</p></aside>`:""}</article>`;
 }
 function renderResults(data){
-  const results=data.results,leaderboard=results.leaderboard||[],matchesByGuestId=new Map(results.matches.map(match=>[match.guestId,match]));
+  const results=data.results,leaderboard=results.leaderboard||[];
   const liveStatus=`${data.completedGuests} / ${data.guestCount} amis inscrits ont terminé. Le classement s'actualise quand un autre ami finit.`;
   const invitePanel=`<div class="invite-box">${identity.inviteUrl?`<input class="invite-url" id="invite-url" readonly value="${esc(identity.inviteUrl)}" aria-label="Lien d'invitation"/><button class="secondary-button" data-action="copy-invite">Copier le lien</button>`:`<button class="primary-button" data-action="load-invite">Créer le lien pour inviter d'autres amis ${icons.arrow}</button>`}</div><p class="invite-hint">Tu peux continuer à partager ce lien : les résultats apparaissent ici dès qu'un ami termine.</p>`;
+  const adConfig=window.GAME_ADS||{},showAds=/^ca-pub-[0-9]+$/.test(adConfig.clientId||"")&&/^[0-9]+$/.test(adConfig.resultSlotId||"");
   return `<section class="results-page"><div class="result-header"><div><p class="eyebrow">Classement privé de l'organisateur</p><h1 class="game-title">Les résultats évoluent.</h1><p class="game-subtitle">Tu es le seul à voir le classement et les réponses détaillées. Les scores décrivent cette partie, pas la personnalité.</p></div><span class="result-tag">${icons.sparkle} En direct</span></div>
   <div class="waiting-indicator">${liveStatus}</div>${invitePanel}
-  <section class="leaderboard"><div class="section-heading"><h2>Classement des amis</h2><p>Score sur 100 · les égalités partagent le rang</p></div>${leaderboard.map(x=>`<div class="leader-row"><span class="rank-badge">${x.rank}</span><strong>${esc(x.name)}</strong><b>${x.total} <small>/100</small></b></div>`).join("")}</section>
-  <section class="match-accordion-list"><div class="section-heading"><h2>Détail des parties</h2><p>Sélectionne un nom pour lire ses réponses.</p></div>${leaderboard.map(entry=>{const match=matchesByGuestId.get(entry.guestId);return match?`<details class="match-accordion"><summary><span class="rank-badge">${entry.rank}</span><strong>${esc(entry.name)}</strong><span class="accordion-score">${entry.total} <small>/100</small><em>Lire les réponses</em></span></summary><div class="match-accordion-content">${renderMatch(match)}</div></details>`:"";}).join("")}</section>
-  <div id="ad-slot-results" class="advert-slot" aria-label="Publicité"></div>
+  <section class="leaderboard"><div class="section-heading"><h2>Classement des amis</h2><p>Score sur 100 · les égalités partagent le rang</p></div><label class="leaderboard-search"><span>Rechercher un ami</span><input id="leaderboard-search" class="text-input" type="search" placeholder="Prénom ou pseudo" value="${esc(resultUiState.query)}" autocomplete="off"/></label><p class="leaderboard-empty" hidden>Aucun ami ne correspond à cette recherche.</p>${leaderboard.map(x=>`<div class="leader-row" data-rank-name="${esc(searchText(x.name))}"><span class="rank-badge">${x.rank}</span><strong>${esc(x.name)}</strong><b>${x.total} <small>/100</small></b></div>`).join("")}</section>
+  <section class="match-accordion-list"><div class="section-heading"><h2>Détail des parties</h2><p>Sélectionne un nom pour lire ses réponses.</p></div><p class="leaderboard-empty" hidden>Aucun ami ne correspond à cette recherche.</p>${leaderboard.map(entry=>`<details class="match-accordion" data-match-id="${esc(entry.guestId)}" data-match-name="${esc(searchText(entry.name))}" ${resultUiState.openGuestId===entry.guestId?"open":""}><summary><span class="rank-badge">${entry.rank}</span><strong>${esc(entry.name)}</strong><span class="accordion-score">${entry.total} <small>/100</small><em>Lire les réponses</em></span></summary><div class="match-accordion-content" data-match-content></div></details>`).join("")}</section>
+  ${showAds?`<div id="ad-slot-results" class="advert-slot" aria-label="Publicité"></div>`:""}
   <div class="result-note">${icons.sparkle}<p><strong>Partager ne garantit pas une victoire individuelle.</strong> Les scores comparent les réponses dans ce jeu. Le pourcentage de confiance est un indicateur ludique fondé uniquement sur les trois dilemmes, pas une vérité scientifique sur le caractère ou la fiabilité d'une personne.</p></div>
   <div class="result-actions"><button class="secondary-button" data-action="new-game">Créer une nouvelle partie ${icons.arrow}</button></div></section>`;
+}
+function hydrateMatchDetails(details=app.querySelector(".match-accordion[open]:not([data-rendered])")){
+  if(!details)return;
+  const match=game?.results?.matches?.find(item=>item.guestId===details.dataset.matchId);if(!match)return;
+  const content=details.querySelector("[data-match-content]");if(!content)return;
+  content.innerHTML=renderMatch(match);details.dataset.rendered="true";
+}
+function filterResults(query){
+  const normalized=searchText(query.trim());
+  app.querySelectorAll("[data-rank-name]").forEach(row=>{row.hidden=!row.dataset.rankName.includes(normalized);});
+  const details=[...app.querySelectorAll(".match-accordion[data-match-name]")];
+  details.forEach(row=>{row.hidden=!row.dataset.matchName.includes(normalized);});
+  app.querySelectorAll(".leaderboard-empty").forEach(item=>{item.hidden=!normalized||details.some(row=>row.dataset.matchName.includes(normalized));});
 }
 function renderGame(data){
   game=data;setTopbar(true);
   if(pendingSelection&&pendingSelection.key!==currentSelectionKey(data))pendingSelection=null;
   if(data.readyToReveal){
     if(data.role==="B"){stopWaiting();app.innerHTML=renderGuestCompleted(data);return;}
-    const signature=JSON.stringify([data.results,data.completedGuests,data.guestCount,identity?.inviteUrl]);
-    if(signature!==resultsSignature||!app.querySelector(".results-page")){app.innerHTML=renderResults(data);resultsSignature=signature;}
+    const signature=JSON.stringify([data.results?.leaderboard?.map(({guestId,total,rank})=>[guestId,total,rank]),data.completedGuests,data.guestCount,identity?.inviteUrl]);
+    if(signature!==resultsSignature||!app.querySelector(".results-page")){app.innerHTML=renderResults(data);resultsSignature=signature;filterResults(resultUiState.query);hydrateMatchDetails();}
     pollWaiting();return;
   }
   resultsSignature=null;
   if(data.role==="A"&&data.myCompleted<3){stopWaiting();app.innerHTML=renderHostTurn(data);return;}
   if(data.role==="A"&&!data.setupDone){stopWaiting();app.innerHTML=renderSetup(data);document.querySelector("#setup-form").addEventListener("submit",saveSetup);return;}
   if(data.role==="A"){app.innerHTML=renderInvite(data);if(!identity.inviteUrl&&data.canInvite)loadInvite(null,true);pollWaiting();return;}
-  if(!data.currentPrompt){app.innerHTML=renderWaiting(data);pollWaiting();return;}
+  if(!data.currentPrompt){app.innerHTML=renderGuestCompleted(data);return;}
   stopWaiting();app.innerHTML=renderGuestStep(data);
 }
 function pollWaiting(){stopWaiting();waitingTimer=setInterval(()=>{if(!busy&&identity&&identity.role!=="JOIN")refreshGame(false);},3500);}
@@ -309,9 +321,11 @@ async function handleClick(event){
   if(action==="set-key")return setSetupAnswer("situation",Number(button.dataset.index),Number(button.dataset.choiceIndex));
   if(action==="reset-situation")return resetSituation(Number(button.dataset.index));
   if(action==="setup-back"&&setupState){setupState.step=Math.max(0,setupState.step-1);app.innerHTML=renderSetup(game);document.querySelector("#setup-form").addEventListener("submit",saveSetup);return;}
-  if(action==="new-game"){stopWaiting();identity=null;game=null;setupState=null;pendingSelection=null;localStorage.removeItem(storagePrefix+"last");history.replaceState(null,"",location.pathname);showHome();}
+  if(action==="new-game"){stopWaiting();identity=null;game=null;setupState=null;pendingSelection=null;resultUiState={query:"",openGuestId:null};localStorage.removeItem(storagePrefix+"last");history.replaceState(null,"",location.pathname);showHome();}
 }
-leaveButton.addEventListener("click",()=>{stopWaiting();identity=null;game=null;pendingSelection=null;localStorage.removeItem(storagePrefix+"last");history.replaceState(null,"",location.pathname);showHome();});
+leaveButton.addEventListener("click",()=>{stopWaiting();identity=null;game=null;pendingSelection=null;resultUiState={query:"",openGuestId:null};localStorage.removeItem(storagePrefix+"last");history.replaceState(null,"",location.pathname);showHome();});
 app.addEventListener("click",handleClick);app.addEventListener("change",handleChange);
+app.addEventListener("input",event=>{if(event.target.id==="leaderboard-search"){resultUiState.query=event.target.value;filterResults(resultUiState.query);}});
+app.addEventListener("toggle",event=>{const details=event.target.closest?.("details.match-accordion");if(!details)return;if(details.open){resultUiState.openGuestId=details.dataset.matchId;hydrateMatchDetails(details);}else if(resultUiState.openGuestId===details.dataset.matchId)resultUiState.openGuestId=null;},true);
 (async function init(){try{banks=await request("/api/banks");identity=restoreIdentity();if(identity)await refreshGame();else showHome();}catch(error){showHome("Impossible de charger les questions : "+error.message);}})();
 
