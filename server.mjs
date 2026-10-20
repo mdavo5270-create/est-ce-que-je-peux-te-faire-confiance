@@ -146,6 +146,31 @@ function hostCompleted(host) {
   return host.rounds.length === 3 && host.rounds.every((round) => round.choice === "PARTAGER" || round.choice === "VOLER");
 }
 
+function ensureSerpentHints(game) {
+  if (!game.host || !hostCompleted(game.host)) return false;
+  const validChoice = (choice) => choice === "PARTAGER" || choice === "VOLER";
+  const existing = new Map((Array.isArray(game.serpentHints) ? game.serpentHints : [])
+    .filter((hint) => Number.isInteger(hint.turn) && hint.turn >= 1 && hint.turn <= 3 && validChoice(hint.claimedChoice) && typeof hint.wasTrue === "boolean")
+    .map((hint) => [hint.turn, hint]));
+  const legacy = game.serpent;
+  if (legacy && Number.isInteger(legacy.turn) && legacy.turn >= 1 && legacy.turn <= 3 && validChoice(legacy.claimedChoice) && typeof legacy.wasTrue === "boolean" && !existing.has(legacy.turn)) {
+    existing.set(legacy.turn, legacy);
+  }
+
+  const hints = [1, 2, 3].map((turn) => {
+    if (existing.has(turn)) return existing.get(turn);
+    const actual = game.host.rounds[turn - 1].choice;
+    const wasTrue = randomInt(1, 101) <= 60;
+    return { turn, claimedChoice: wasTrue ? actual : actual === "PARTAGER" ? "VOLER" : "PARTAGER", wasTrue };
+  });
+  const unchanged = Array.isArray(game.serpentHints)
+    && game.serpentHints.length === 3
+    && game.serpentHints.every((hint, index) => hint.turn === index + 1 && hint.claimedChoice === hints[index].claimedChoice && hint.wasTrue === hints[index].wasTrue);
+  if (unchanged) return false;
+  game.serpentHints = hints;
+  return true;
+}
+
 function guestCompleted(guest) {
   return guest.progress === guestFlow.length
     && guest.rounds.every((round) => round.choice === "PARTAGER" || round.choice === "VOLER")
@@ -298,12 +323,12 @@ function scoreGuest(game, guest) {
     dilemmas: dilemmaDetails,
     personal: personalDetails,
     situations: situationDetails,
-    serpent: game.serpent ? {
-      turn: game.serpent.turn,
-      said: game.serpent.claimedChoice,
-      actual: game.host.rounds[game.serpent.turn - 1].choice,
-      wasTrue: game.serpent.wasTrue
-    } : null
+    serpentHints: (game.serpentHints || []).map((hint) => ({
+      turn: hint.turn,
+      said: hint.claimedChoice,
+      actual: game.host.rounds[hint.turn - 1].choice,
+      wasTrue: hint.wasTrue
+    }))
   };
 }
 
@@ -335,9 +360,10 @@ function promptForGuest(game, guest) {
         total: round.total,
         scenario: scenarioById.get(round.scenarioId)
       },
-      serpentHint: game.serpent && game.serpent.turn === stage.index + 1
-        ? { turn: game.serpent.turn, said: game.serpent.claimedChoice }
-        : null
+      serpentHint: game.serpentHints?.[stage.index] && guest.serpentUnlockedTurns?.includes(stage.index + 1)
+        ? { turn: game.serpentHints[stage.index].turn, said: game.serpentHints[stage.index].claimedChoice }
+        : null,
+      serpentLocked: Boolean(game.serpentHints?.[stage.index] && !guest.serpentUnlockedTurns?.includes(stage.index + 1))
     };
   }
   if (stage.type === "personal") {
@@ -396,6 +422,11 @@ function hostView(game) {
 
 function guestView(game, guest) {
   const readyToReveal = guestCompleted(guest);
+  const ownResult = readyToReveal ? scoreGuest(game, guest) : null;
+  if (ownResult) {
+    const unlockedTurns = Array.isArray(guest.serpentUnlockedTurns) ? guest.serpentUnlockedTurns : [];
+    ownResult.serpentHints = ownResult.serpentHints.filter((hint) => unlockedTurns.includes(hint.turn));
+  }
   return {
     id: game.id,
     role: "B",
@@ -406,9 +437,11 @@ function guestView(game, guest) {
     myRounds: [],
     progress: guest.progress,
     totalSteps: guestFlow.length,
+    shareInvitePath: `/?game=${encodeURIComponent(game.id)}&invite=${encodeURIComponent(game.inviteToken)}`,
     currentPrompt: readyToReveal ? null : promptForGuest(game, guest),
     inviteClosed: false,
     readyToReveal,
+    ownResult,
     results: null
   };
 }
@@ -473,18 +506,20 @@ export function createGameServer({ dataFile = defaultDataFile } = {}) {
           host: { token: randomBytes(24).toString("base64url"), name, rounds: [], severityChain: null },
           guests: [],
           setup: null,
-          serpent: null
+          serpent: null,
+          serpentHints: null
         };
         games.set(id, game);
         saveGames(games, dataFile);
         return sendJson(response, 201, { id, token: game.host.token, role: "A" });
       }
 
-      const match = pathname.match(/^\/api\/games\/([\w-]+)(?:\/(invite|join|close-invites|roll|choice|setup|answer))?$/);
+      const match = pathname.match(/^\/api\/games\/([\w-]+)(?:\/(invite|join|close-invites|roll|choice|setup|answer|serpent-task))?$/);
       if (match) {
         const [, id, action] = match;
         const game = games.get(id);
         if (!game) throw new HttpError(404, "Cette partie est introuvable.");
+        if (ensureSerpentHints(game)) saveGames(games, dataFile);
 
         if (action === "join" && request.method === "POST") {
           const body = await readJson(request);
@@ -502,6 +537,7 @@ export function createGameServer({ dataFile = defaultDataFile } = {}) {
             rounds: game.host.rounds.map((round) => ({ dice: [...round.dice], total: round.total, scenarioId: round.scenarioId, choice: null })),
             personalAnswers: Array(3).fill(null),
             situationAnswers: Array(4).fill(null),
+            serpentUnlockedTurns: [],
             progress: 0
           };
           game.guests.push(guest);
@@ -512,6 +548,21 @@ export function createGameServer({ dataFile = defaultDataFile } = {}) {
         const authorized = getAuthorizedGame(request, url, games, id);
         const { role, guest } = authorized;
         if (!action && request.method === "GET") return sendJson(response, 200, playerView(game, role, guest));
+
+        if (action === "serpent-task" && request.method === "POST") {
+          if (role !== "B") throw new HttpError(403, "Seul un ami invité peut demander l'indice du Serpent.");
+          const body = await readJson(request);
+          const stage = guestFlow[guest.progress];
+          if (!stage || stage.type !== "dilemma" || body.turn !== stage.index + 1) {
+            throw new HttpError(409, "L'indice se débloque uniquement pour le dilemme en cours.");
+          }
+          if (body.task !== "share-invite") throw new HttpError(400, "Partage le lien de la partie pour débloquer l'indice.");
+          if (!game.serpentHints?.[stage.index]) throw new HttpError(409, "L'indice du Serpent n'est pas disponible pour ce dilemme.");
+          if (!Array.isArray(guest.serpentUnlockedTurns)) guest.serpentUnlockedTurns = [];
+          if (!guest.serpentUnlockedTurns.includes(body.turn)) guest.serpentUnlockedTurns.push(body.turn);
+          saveGames(games, dataFile);
+          return sendJson(response, 200, playerView(game, role, guest));
+        }
 
         if (action === "setup" && request.method === "POST") {
           if (role !== "A") throw new HttpError(403, "Seul le joueur A prépare les questions.");
@@ -525,17 +576,6 @@ export function createGameServer({ dataFile = defaultDataFile } = {}) {
         if (action === "invite" && request.method === "GET") {
           if (role !== "A") throw new HttpError(403, "Seul le joueur A peut créer l'invitation.");
           if (!hostCompleted(game.host) || !game.setup) throw new HttpError(409, "Termine les dilemmes et prépare les questions avant d'inviter tes amis.");
-          if (!game.serpent) {
-            const turn = randomInt(1, 4);
-            const actual = game.host.rounds[turn - 1].choice;
-            const wasTrue = randomInt(1, 101) <= 60;
-            game.serpent = {
-              turn,
-              claimedChoice: wasTrue ? actual : actual === "PARTAGER" ? "VOLER" : "PARTAGER",
-              wasTrue
-            };
-            saveGames(games, dataFile);
-          }
           const invite = new URL("/", publicBaseUrl(request));
           invite.searchParams.set("game", game.id);
           invite.searchParams.set("invite", game.inviteToken);

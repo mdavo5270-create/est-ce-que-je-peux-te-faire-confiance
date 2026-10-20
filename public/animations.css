@@ -1,0 +1,92 @@
+.serpent-hint {
+  position: relative;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 17px;
+  align-items: center;
+  margin-top: 19px;
+  padding: 16px 19px;
+  overflow: hidden;
+  border: 1px solid #e6e4d8;
+  border-radius: 17px;
+  background: linear-gradient(112deg, #f1f3e9 0%, #faf8f1 54%, #f4eee4 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.82);
+  animation: serpent-card-enter .58s cubic-bezier(.2,.75,.25,1) both;
+}
+
+.serpent-hint::after {
+  position: absolute;
+  right: -34px;
+  bottom: -76px;
+  width: 170px;
+  height: 170px;
+  border: 1px solid rgba(126,143,93,.12);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.serpent-visual {
+  position: relative;
+  display: grid;
+  width: 82px;
+  height: 82px;
+  place-items: center;
+  border: 1px solid rgba(126,143,93,.17);
+  border-radius: 25px;
+  background: rgba(255,255,255,.45);
+  box-shadow: 0 7px 20px rgba(64,76,49,.07);
+  perspective: 180px;
+}
+
+.serpent-illustration { width: 76px; height: 76px; overflow: visible; transform-style: preserve-3d; filter: drop-shadow(3px 4px 1px rgba(56,69,43,.13)); animation: serpent-illustration-float 5s 1.2s ease-in-out infinite; }
+.serpent-aura { fill: rgba(179,194,146,.14); transform-origin: center; animation: serpent-aura-breathe 4s ease-in-out infinite; }
+.serpent-body { fill: none; stroke: #839566; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: serpent-uncoil 1.25s .12s cubic-bezier(.3,.7,.25,1) forwards; }
+.serpent-tail { fill: none; stroke: #839566; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0; animation: serpent-tail-appear .25s .85s ease-out forwards; }
+.serpent-head { transform-box: fill-box; transform-origin: 50% 80%; animation: serpent-head-sway 3.6s 1.4s ease-in-out infinite; }
+.serpent-face { fill: #718451; stroke: #68794a; stroke-width: 1.3; }
+.serpent-eye { fill: #25372d; animation: serpent-blink 4.8s 2s infinite; transform-box: fill-box; transform-origin: center; }
+.serpent-eye-glint { fill: #fff; }
+.serpent-tongue { fill: none; stroke: #bd806b; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transform-box: fill-box; transform-origin: left center; animation: serpent-tongue-flick 3.7s 1.7s ease-in-out infinite; }
+.serpent-scale { fill: none; stroke: rgba(246,248,238,.8); stroke-width: 1.8; stroke-linecap: round; opacity: 0; animation: serpent-scale-appear .35s 1s ease-out forwards; }
+
+.serpent-copy { position: relative; z-index: 1; min-width: 0; }
+.serpent-label { display: block; margin-bottom: 5px; color: #858b77; font-size: 8px; font-weight: 700; letter-spacing: .12em; line-height: 1.4; }
+.serpent-title { display: block; color: #46553f; font-family: 'DM Serif Display', Georgia, serif; font-size: 20px; font-weight: 400; }
+.serpent-copy p { margin: 6px 0 0; color: #6f766b; font-size: 10px; line-height: 1.55; }
+.serpent-copy p b { color: #515e4c; }
+.serpent-whisper { display: inline-flex; align-items: center; min-height: 27px; margin-top: 6px; padding: 4px 10px; border: 1px solid #dbe1ce; border-radius: 999px; color: #526344; background: rgba(255,255,255,.7); font-size: 9px; font-weight: 800; letter-spacing: .12em; opacity: 0; transform: translateY(5px) scale(.96); animation: serpent-whisper-reveal .42s .75s cubic-bezier(.2,.8,.2,1) forwards; }
+.serpent-copy .serpent-disclaimer { max-width: 450px; margin-top: 7px; color: #858a7d; font-size: 9px; }
+.serpent-task-button { margin-top: 10px; min-height: 40px; padding: 10px 14px; font-size: 10px; }
+.serpent-copy .serpent-task-note,.serpent-copy .serpent-task-error { max-width: 450px; margin-top: 6px; font-size: 9px; }
+.serpent-copy .serpent-task-error { color: #9b5142; }
+
+@keyframes serpent-card-enter { from { opacity: 0; transform: translateY(11px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes serpent-illustration-float { 0%,100% { transform: rotateY(-7deg) rotateX(2deg) translateY(0); } 50% { transform: rotateY(6deg) rotateX(-1deg) translateY(-2px); } }
+@keyframes serpent-uncoil { to { stroke-dashoffset: 0; } }
+@keyframes serpent-tail-appear { to { opacity: .8; } }
+@keyframes serpent-scale-appear { to { opacity: 1; } }
+@keyframes serpent-whisper-reveal { to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes serpent-aura-breathe { 0%,100% { opacity: .75; transform: scale(.97); } 50% { opacity: 1; transform: scale(1.04); } }
+@keyframes serpent-head-sway { 0%,100% { transform: rotate(0) translateY(0); } 50% { transform: rotate(-3deg) translateY(-1px); } }
+@keyframes serpent-tongue-flick { 0%,75%,100% { transform: scaleX(.55); opacity: .68; } 81% { transform: scaleX(1); opacity: 1; } 87% { transform: scaleX(.7); opacity: .8; } }
+@keyframes serpent-blink { 0%,46%,49%,100% { transform: scaleY(1); } 47.5% { transform: scaleY(.12); } }
+
+@media (max-width: 520px) {
+  .serpent-hint { grid-template-columns: 62px minmax(0,1fr); gap: 12px; padding: 14px; border-radius: 15px; }
+  .serpent-visual { width: 60px; height: 60px; border-radius: 19px; }
+  .serpent-illustration { width: 60px; height: 60px; }
+  .serpent-title { font-size: 18px; }
+  .serpent-label { font-size: 7px; letter-spacing: .09em; }
+  .serpent-copy p { font-size: 9px; }
+  .serpent-copy .serpent-disclaimer { font-size: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .serpent-hint, .serpent-illustration, .serpent-aura, .serpent-body, .serpent-tail, .serpent-head, .serpent-eye, .serpent-tongue, .serpent-scale, .serpent-whisper {
+    animation: none;
+    opacity: 1;
+    stroke-dashoffset: 0;
+    transform: none;
+  }
+}

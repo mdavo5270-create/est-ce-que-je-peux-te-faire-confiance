@@ -52,6 +52,7 @@ async function prepareHost(base, options = {}) {
 async function joinGuest(base, id, invite, name) {
   const joined = await api(base, "/api/games/" + id + "/join", { method: "POST", body: { invite, name } });
   assert.equal(joined.status, 201);
+  assert.equal(joined.data.data.ownResult,null,"an invited player sees no result before finishing");
   return { token: joined.data.token, guestId: joined.data.guestId, view: joined.data.data };
 }
 async function playGuest(base, id, guest, { dilemmaChoices = ["PARTAGER", "PARTAGER", "PARTAGER"], personalChoices = [0, 0, 0], situationChoices = [0, 0, 0, 0] } = {}) {
@@ -59,13 +60,24 @@ async function playGuest(base, id, guest, { dilemmaChoices = ["PARTAGER", "PARTA
   let view = guest.view, dilemmaIndex = 0, personalIndex = 0, situationIndex = 0;
   const expectedTypes = ["personal", "situation", "dilemma", "personal", "situation", "dilemma", "personal", "situation", "dilemma", "situation"];
   for (let step = 0; step < 10; step += 1) {
-    const prompt = view.currentPrompt;
+    let prompt = view.currentPrompt;
     assert.ok(prompt, "each of the ten steps has a prompt before the answer");
     assert.equal(prompt.type, expectedTypes[step]);
     let result;
     if (prompt.type === "dilemma") {
+      assert.equal(prompt.serpentHint,null,"the clue stays hidden until the invite-sharing task is completed");
+      assert.equal(prompt.serpentLocked,true);
+      if(dilemmaIndex===0){
+        const wrongTurn=await api(base,"/api/games/"+id+"/serpent-task",{method:"POST",token:guest.token,body:{turn:3,task:"share-invite"}});
+        assert.equal(wrongTurn.status,409,"a player cannot unlock a clue for a different dilemma");
+      }
+      const unlocked=await api(base,"/api/games/"+id+"/serpent-task",{method:"POST",token:guest.token,body:{turn:prompt.round.turn,task:"share-invite"}});
+      assert.equal(unlocked.status,200);
+      prompt=unlocked.data.currentPrompt;
+      assert.ok(prompt.serpentHint,"the clue appears only after the task endpoint accepts the action");
+      assert.equal(prompt.serpentLocked,false);
       rounds.push(prompt.round);
-      if (prompt.serpentHint) hints.push(prompt.serpentHint);
+      hints.push(prompt.serpentHint);
       result = await api(base, "/api/games/" + id + "/choice", { method: "POST", token: guest.token, body: { choice: dilemmaChoices[dilemmaIndex++] } });
     } else {
       questions.push(prompt);
@@ -123,7 +135,9 @@ test("the invite form submits a named guest and safely handles a missing name", 
 test("participant screens explain when the organizer can see answers and offer a searchable ranking", () => {
   const client = readFileSync(new URL("../public/app.js", import.meta.url), "utf8");
   assert.match(client, /L'organisateur verra tes réponses et ton résultat quand tu auras terminé/);
-  assert.match(client, /L'organisateur peut maintenant consulter ton score et le détail de tes réponses/);
+  assert.match(client, /Ton bilan est prêt/);
+  assert.match(client, /Tu vois ton score et le détail de tes réponses/);
+  assert.match(client, /classement des autres invités reste réservé à l'organisateur/);
   assert.match(client, /Dès qu'un ami termine, l'hôte voit son résultat/);
   assert.match(client, /Rechercher un ami/);
   assert.match(client, /12 premiers inscrits/);
@@ -212,6 +226,11 @@ test("the organizer sees results as friends finish and guests receive no group r
     situationChoices:[0,1,2,0]
   });
   assert.equal(resultA.view.readyToReveal,true);
+  assert.equal(resultA.view.ownResult.scores.total,50);
+  assert.equal(resultA.view.ownResult.trust.percent,50);
+  assert.equal(resultA.view.ownResult.name,"Camille");
+  assert.equal(resultA.view.ownResult.personal[0].guestAnswerIndex,0);
+  assert.equal(resultA.view.ownResult.serpentHints.length,3,"the guest only sees the clues they unlocked");
   const waitingHost = await api(base,"/api/games/"+host.id,{token:host.token});
   assert.equal(waitingHost.data.readyToReveal,true);
   assert.equal(waitingHost.data.results.matches.length,1);
@@ -228,8 +247,9 @@ test("the organizer sees results as friends finish and guests receive no group r
   assert.deepEqual(resultA.rounds.map(x=>x.scenario.id),host.rounds.map(x=>x.scenario.id));
   assert.deepEqual(resultB.rounds.map(x=>x.dice),host.rounds.map(x=>x.dice));
   assert.deepEqual(resultA.questions.map(x=>x.question.id),["p01","s01","p02","s02","p03","s03","s04"]);
-  assert.equal(resultA.hints.length,1);
-  assert.deepEqual(resultA.hints,resultB.hints,"each friend gets the same Serpent clue");
+  assert.equal(resultA.hints.length,3,"the Serpent appears on all three prisoner's dilemmas");
+  assert.deepEqual(resultA.hints.map(hint=>hint.turn),[1,2,3]);
+  assert.deepEqual(resultA.hints,resultB.hints,"each friend gets the same three Serpent clues");
   const liveAfterSecond=await api(base,"/api/games/"+host.id,{token:host.token});
   assert.equal(liveAfterSecond.data.results.matches.length,2);
   assert.deepEqual(liveAfterSecond.data.results.leaderboard.map(x=>x.name),["Camille","Noé"]);
@@ -238,6 +258,9 @@ test("the organizer sees results as friends finish and guests receive no group r
   const guestReveal=await api(base,"/api/games/"+host.id,{token:b.token});
   assert.equal(guestReveal.data.readyToReveal,true);
   assert.equal(guestReveal.data.results,null);
+  assert.equal(guestReveal.data.ownResult.name,"Noé");
+  assert.equal(typeof guestReveal.data.ownResult.scores.total,"number");
+  assert.equal("leaderboard" in guestReveal.data.ownResult,false,"a guest receives only their own report, never the group ranking");
   assert.equal("leaderboard" in guestReveal.data,false);
   assert.equal("matches" in guestReveal.data,false);
   assert.equal("completedGuests" in guestReveal.data,false);
@@ -249,6 +272,7 @@ test("the organizer sees results as friends finish and guests receive no group r
   assert.equal(liveAfterSecond.data.results.matches[0].cooperation.shared,4);
   assert.equal(liveAfterSecond.data.results.matches[0].cooperation.percent,67);
   assert.equal(liveAfterSecond.data.results.matches[0].trust.percent,50);
+  assert.deepEqual(liveAfterSecond.data.results.matches[0].serpentHints.map(hint=>hint.turn),[1,2,3]);
   const hostReveal = await api(base,"/api/games/"+host.id,{token:host.token});
   assert.equal(hostReveal.data.results.matches.length,2);
   assert.equal(hostReveal.data.results.matches[0].scores.total,50);

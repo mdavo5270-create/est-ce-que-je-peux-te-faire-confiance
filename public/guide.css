@@ -1,0 +1,23 @@
+.guide-main{max-width:980px}
+.guide-home-link{color:#627454;font-size:11px;font-weight:700;text-decoration:none}
+.guide-home-link span{margin-left:5px}
+.guide-hero{max-width:780px;padding:24px 0 28px}
+.guide-hero .display-title{font-size:clamp(43px,6vw,70px)}
+.guide-play-button{margin-top:24px;text-decoration:none}
+.guide-section{margin-top:49px}
+.guide-section-heading{margin-bottom:17px}
+.guide-section-heading .eyebrow{margin-bottom:9px}
+.guide-section-heading h2{max-width:680px;margin:0;font-family:'DM Serif Display',Georgia,serif;font-size:clamp(28px,4vw,38px);font-weight:400;letter-spacing:-.04em;line-height:1.1}
+.guide-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.guide-card{min-height:210px;padding:22px;border:1px solid rgba(255,255,255,.9);border-radius:20px;background:var(--white);box-shadow:0 10px 28px rgba(30,44,36,.035)}
+.guide-number{color:#8b9f73;font-size:10px;font-weight:700;letter-spacing:.13em}
+.guide-card h3,.score-row h3{margin:14px 0 8px;color:#3d4a40;font-size:14px;font-weight:700}
+.guide-card p,.score-row p,.guide-body-copy{margin:0;color:#747c72;font-size:12px;line-height:1.75}
+.score-rows{display:grid;gap:10px}
+.score-row{display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:center;padding:18px 21px;border:1px solid #e8e8df;border-radius:15px;background:rgba(255,254,250,.72)}
+.score-row>strong{color:#6e8458;font-family:'DM Serif Display',Georgia,serif;font-size:24px;font-weight:400;white-space:nowrap}
+.score-row h3{margin:0 0 4px}
+.guide-note{margin-top:14px;padding:17px 19px;border-left:2px solid #bdcda6;border-radius:0 13px 13px 0;color:#687263;background:#eef2e7;font-size:11px;line-height:1.7}
+.guide-body-copy{max-width:740px;font-size:13px}
+.guide-footer a{color:#627454;font-weight:600;text-decoration:none}
+@media(max-width:700px){.guide-main{padding-top:31px}.guide-hero{padding:8px 0 5px}.guide-hero .display-title{font-size:clamp(42px,11.3vw,61px)}.guide-section{margin-top:38px}.guide-cards{grid-template-columns:1fr}.guide-card{min-height:unset;padding:19px}.guide-card h3{margin-top:10px}.score-row{grid-template-columns:1fr;gap:6px;padding:16px}.score-row>strong{font-size:20px}}

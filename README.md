@@ -1,7 +1,7 @@
 
 # Est-ce que je peux te faire confiance ?
 
-Une application web en français, pensée pour le téléphone et l'ordinateur. Un hôte prépare une partie et partage le même lien avec son groupe. Chaque invité répond séparément; seul l'organisateur voit les scores et les réponses détaillées, dès qu'un invité a terminé. Le classement privé s'enrichit ensuite à mesure que les amis finissent.
+Une application web en français, pensée pour le téléphone et l'ordinateur. Un hôte prépare une partie et partage le même lien avec son groupe. Chaque invité répond séparément; dès qu'il termine, il voit son propre score sur 100, son verdict de confiance et le détail de ses réponses. Seul l'organisateur voit les scores et les réponses détaillées de tout le groupe ainsi que le classement privé, qui s'enrichit à mesure que les amis finissent.
 
 ## Lancer l'application
 
@@ -22,7 +22,7 @@ Les parties sont enregistrées dans `data/games.json`. Pour choisir un autre por
 3. Après les dilemmes, l'hôte choisit trois questions parmi une banque de 50 et fixe ses propres réponses parmi cinq propositions fixes, sans saisie libre. La question sur la boisson propose l'eau, la bière, le vin, le chocolat chaud ou « Aucune de ces réponses ». Il passe ces questions sur trois écrans distincts, puis voit chaque mise en situation sur son propre écran. Pour chacune, quatre réponses sont proposées : son premier clic marque la priorité; son deuxième clic, sur une réponse différente, marque l'alternative acceptée. Les deux autres réponses valent zéro. Il peut revenir en arrière avant de verrouiller sa préparation.
 4. La préparation est verrouillée. Le même lien d'invitation peut être envoyé à autant d'amis que souhaité; le jeu n'impose pas de nombre maximal et personne n'a besoin de fermer les inscriptions.
 5. Les invités répondent dans cet ordre : question personnelle, situation, dilemme, puis le même cycle deux fois; une quatrième situation termine la partie. Ils choisissent toujours parmi des boutons de réponse prédéfinis : les trois questions personnelles concernent A, et l'invité essaie de deviner ses réponses; dans chaque mise en situation, il choisit ce qu'il ferait pour A. Aucun champ de réponse libre n'est utilisé dans ces phases. Chacun fait face aux trois mêmes dilemmes et répond aux quatre mêmes situations. Le pseudo est mémorisé dans le navigateur; rouvrir le même lien sur cet appareil reprend la session de l'invité.
-6. Dès qu'un invité finit, l'organisateur peut consulter son score, le classement et ses réponses détaillées. L'invité voit une confirmation, mais aucun classement ni résultat de groupe. Les autres invités ne voient ni ses choix ni son score. Le classement privé de l'organisateur s'actualise à mesure que d'autres personnes finissent.
+6. Dès qu'un invité finit, il voit son bilan personnel : score, verdict, choix et corrections. Il ne reçoit aucun résultat concernant un autre invité ni le classement global. L'organisateur peut consulter le détail de chacun et le classement privé s'actualise à mesure que les amis finissent.
 
 Un invité qui ferme la page peut reprendre sa partie en rouvrant le lien sur le même navigateur. Le profil local retient son pseudo et son jeton de session; ce n'est pas un compte récupérable sur un autre appareil. Le lien d'invitation reste ouvert et ne montre aucune réponse.
 
@@ -39,7 +39,7 @@ Deux indicateurs complémentaires sont affichés pour chaque duo :
 - **Coopération :** nombre de PARTAGER parmi les six décisions des deux joueurs, sur six.
 - **Confiance dans cette partie :** moyenne des trois paires de dilemmes (100 % pour deux PARTAGER, 25 % pour des choix opposés, 0 % pour deux VOLER). Le message affiché est choisi parmi des formulations écrites pour les résultats possibles.
 
-Ces nombres décrivent uniquement les choix effectués dans cette partie; ils ne sont pas des mesures scientifiques de la personnalité ou de la fiabilité. Partager ne garantit pas une victoire individuelle. Le Serpent du doute donne à tous les invités le même indice au sujet du choix de l'hôte sur un dilemme; il est vrai ou inversé au hasard et n'influence aucun score.
+Ces nombres décrivent uniquement les choix effectués dans cette partie; ils ne sont pas des mesures scientifiques de la personnalité ou de la fiabilité. Partager ne garantit pas une victoire individuelle. Le Serpent du doute garde chaque indice jusqu'à ce que l'invité partage ou copie le lien d'invitation. Il donne ensuite un indice distinct à chaque dilemme, vrai ou inversé au hasard, sans influencer le score.
 
 ## Lien de partage
 
@@ -62,7 +62,11 @@ Les tests couvrent les banques, les règles de score, les invitations multi-amis
 
 ## Publicité et publication
 
-Un emplacement est prévu après le classement. La publicité reste désactivée tant que les champs `clientId` et `resultSlotId` dans `public/ad-config.js` sont vides. Après ouverture et validation d'un compte AdSense et du site, ajoute l'identifiant éditeur (`ca-pub-…`) et l'identifiant de l'unité publicitaire à cet endroit. Le jeu fonctionne en local sans ces identifiants; aucune annonce ne se charge dans cet état. L'indice du Serpent n'est pas encore lié à une annonce récompensée : il reste gratuit jusqu'à l'intégration d'un fournisseur compatible.
+Une page informative dédiée est disponible sur `/guide.html`. C'est le seul emplacement prévu pour une bannière AdSense; aucune annonce ne se place près des boutons de choix ou sur les écrans où l'on joue. Le code publicitaire reste inactif sur `localhost` et tant que `clientId`, `guideSlotId` et `consentConfigured` dans `public/ad-config.js` ne sont pas configurés.
+
+Pour l'activer, il faudra publier le site sous HTTPS, ajouter et faire approuver ce domaine dans le compte AdSense, puis remplacer les valeurs vides par l'identifiant éditeur (`ca-pub-…`) et le numéro d'unité publicitaire obtenus dans ce compte. Il faudra aussi publier les informations de confidentialité et configurer la CMP/Privacy & messaging de Google avant l'activation pour les régions concernées. La valeur `consentConfigured` doit rester `false` jusqu'à ce que cette configuration soit réellement faite. Google demande une CMP certifiée intégrée au TCF pour les annonces personnalisées dans l'EEE, au Royaume-Uni et en Suisse : https://support.google.com/adsense/answer/13554116?hl=fr.
+
+Le Serpent conserve actuellement la tâche de partage/copie du lien; cette action ne génère pas de revenu. Une annonce récompensée pour son indice nécessitera une intégration distincte via Google Ad Manager et doit rester facultative. Le code ajouté ici n'ajoute aucune dépendance et n'entraîne aucun coût d'hébergement, de domaine ou de compte publicitaire.
 
 ## Contenu
 
