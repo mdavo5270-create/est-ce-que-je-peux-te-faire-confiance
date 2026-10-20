@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f5f4ef" />
+    <meta name="description" content="Un jeu à deux autour du partage, du choix et de la confiance." />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css?v=3" />
+    <link rel="stylesheet" href="/flow.css?v=3" />
+    <link rel="stylesheet" href="/ad.css?v=1" />
+    <title>Est-ce que je peux te faire confiance ?</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Retour à l'accueil">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i></span>
+          <span class="brand-name">à deux</span>
+        </a>
+        <div class="topbar-status"><span class="status-dot"></span><span id="topbar-label">UNE PARTIE PRIVÉE</span></div>
+        <button class="icon-button hidden" id="leave-game" type="button" aria-label="Quitter la partie" title="Quitter la partie">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </button>
+      </header>
+      <main id="app" class="main-content" aria-live="polite"></main>
+      <footer class="site-footer">
+        <span>Un jeu de choix, pas un test de personnalité.</span>
+        <span class="footer-lock"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="2"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg> Réponses privées jusqu'à la fin</span>
+      </footer>
+    </div>
+    <script src="/ad-config.js?v=1"></script>
+    <script src="/ads.js?v=1" defer></script>
+    <script type="module" src="/app.js?v=8"></script>
+  </body>
+</html>
