@@ -68,15 +68,37 @@ npm start
 npm test
 ```
 
-Les tests couvrent les banques, les règles de score, les invitations multi-amis, le verrouillage, la confidentialité avant révélation, le classement et la sauvegarde des réponses.
+Les tests couvrent les banques, les règles de score, les invitations multi-amis, le verrouillage, la confidentialité avant révélation, le classement, la sauvegarde des réponses, ainsi que les pages publiques, le sitemap et les règles d'emplacement publicitaire.
 
-## Publicité et publication
+## Site public, référencement et publicité
 
-Une page informative dédiée est disponible sur `/guide.html`. C'est le seul emplacement prévu pour une bannière AdSense; aucune annonce ne se place près des boutons de choix ou sur les écrans où l'on joue. Le code publicitaire reste inactif sur `localhost` et tant que `clientId`, `guideSlotId` et `consentConfigured` dans `public/ad-config.js` ne sont pas configurés.
+Le serveur publie, en plus du jeu, des pages indexables qui apportent le trafic et le contenu qu'exige Google AdSense :
 
-Pour l'activer, il faudra publier le site sous HTTPS, ajouter et faire approuver ce domaine dans le compte AdSense, puis remplacer les valeurs vides par l'identifiant éditeur (`ca-pub-…`) et le numéro d'unité publicitaire obtenus dans ce compte. Il faudra aussi publier les informations de confidentialité et configurer la CMP/Privacy & messaging de Google avant l'activation pour les régions concernées. La valeur `consentConfigured` doit rester `false` jusqu'à ce que cette configuration soit réellement faite. Google demande une CMP certifiée intégrée au TCF pour les annonces personnalisées dans l'EEE, au Royaume-Uni et en Suisse : https://support.google.com/adsense/answer/13554116?hl=fr.
+- `/dilemmes` et `/dilemmes/<id>` : une page par dilemme (110 au total), avec les quatre issues et une interaction facultative.
+- `/articles/...` : trois articles de fond (jeux de confiance, dilemme du prisonnier, animer une soirée).
+- `/a-propos`, `/contact`, `/mentions-legales`, `/confidentialite` : pages exigées par AdSense, sans aucune annonce.
+- `/robots.txt`, `/sitemap.xml` (généré, 121 adresses) et `/ads.txt` (généré depuis `public/ad-config.js`).
 
-Le Serpent conserve actuellement la tâche de partage/copie du lien; cette action ne génère pas de revenu. Une annonce récompensée pour son indice nécessitera une intégration distincte via Google Ad Manager et doit rester facultative. Le code ajouté ici n'ajoute aucune dépendance et n'entraîne aucun coût d'hébergement, de domaine ou de compte publicitaire.
+Variables d'environnement à définir sur l'hébergeur :
+
+| Variable | Rôle |
+| --- | --- |
+| `PUBLIC_URL` | Adresse publique du site (ex. `https://mon-domaine.fr`), utilisée pour les liens canoniques et le sitemap. |
+| `OWNER_NAME` | Nom de l'éditeur affiché dans les mentions légales et la politique de confidentialité. |
+| `CONTACT_EMAIL` | Adresse de contact affichée sur les pages légales. Tant qu'elle manque, un texte à compléter est affiché. |
+
+### Règles d'emplacement des annonces
+
+Elles sont voulues pour rester dans les règles de Google tout en maximisant les impressions : annonces sur les pages de contenu (guide, hub des dilemmes, pages de dilemme, articles), accueil sous le contenu éditorial, et écran de résultats final. Il n'y en a jamais dans la zone de jeu (`#app`), près des boutons de réponse, sur les pages légales ni sur les erreurs 404. Chaque annonce est chargée une seule fois, différée jusqu'à l'approche de l'écran, jamais rafraîchie, et masquée si Google ne la remplit pas. Ne rien changer à ces principes : un clic accidentel ou une incitation au clic peut faire suspendre le compte.
+
+### Activer la publicité
+
+1. Acheter un domaine, le faire pointer vers l'hébergeur et définir `PUBLIC_URL`, `OWNER_NAME` et `CONTACT_EMAIL`.
+2. Ajouter le site dans AdSense et attendre l'approbation. Vérifier que `https://<domaine>/ads.txt` répond (il reste un simple commentaire tant que `clientId` est vide).
+3. Dans AdSense, créer une unité « display responsive » et le message de consentement (Privacy & messaging, certifié TCF) pour l'EEE, le Royaume-Uni et la Suisse.
+4. Renseigner dans `public/ad-config.js` : `clientId` (`ca-pub-…`), `slotId` (et, au choix, `slots` pour suivre chaque position), puis passer `consentConfigured` à `true` seulement quand le message de consentement est publié. `testMode: true` sert aux essais.
+
+L'annonce récompensée du Serpent nécessiterait Google Ad Manager et reste facultative ; le partage du lien ne génère pas de revenu. Le code n'ajoute aucune dépendance. Voir aussi : https://support.google.com/adsense/answer/13554116?hl=fr.
 
 ## Contenu
 

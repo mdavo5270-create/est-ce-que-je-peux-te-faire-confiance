@@ -3,6 +3,16 @@ const app = document.querySelector("#app");
 const leaveButton = document.querySelector("#leave-game");
 const topbarLabel = document.querySelector("#topbar-label");
 const storagePrefix = "trust-game:";
+// Pilote l'affichage du contenu éditorial (accueil) et de l'annonce de résultats, placés hors de #app
+// pour ne pas être détruits par les rafraîchissements de l'écran.
+function syncView(){
+  const home=!app.children.length||!!app.querySelector(".home-grid");
+  document.body.classList.toggle("in-game",!home);
+  document.body.classList.toggle("has-results",!!app.querySelector(".results-page"));
+}
+new MutationObserver(syncView).observe(app,{childList:true});
+syncView();
+
 let identity = null, banks = null, setupState = null, waitingTimer = null, busy = false, toastTimer = null, game = null, resultsSignature = null, pendingSelection = null;
 let resultUiState = { query: "", openGuestId: null };
 const icons = {

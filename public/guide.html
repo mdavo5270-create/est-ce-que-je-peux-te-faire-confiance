@@ -5,10 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#f5f4ef" />
     <meta name="description" content="Les règles, les scores et le fonctionnement du jeu Est-ce que je peux te faire confiance ?" />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <link rel="canonical" href="{{SITE_URL}}/guide.html" />
+    <meta property="og:site_name" content="à deux" />
+    <meta property="og:title" content="Comment fonctionne le jeu ? · à deux" />
+    <meta property="og:description" content="Les règles, les scores et le fonctionnement du jeu Est-ce que je peux te faire confiance ?" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="{{SITE_URL}}/guide.html" />
+    <meta property="og:locale" content="fr_FR" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css?v=3" />
-    <link rel="stylesheet" href="/ad.css?v=2" />
+    <link rel="stylesheet" href="/ad.css?v=3" />
     <link rel="stylesheet" href="/guide.css?v=1" />
+    <link rel="stylesheet" href="/content.css?v=1" />
     <title>Comment fonctionne le jeu ? · à deux</title>
   </head>
   <body>
@@ -40,6 +49,8 @@
           </div>
         </section>
 
+        <aside class="ad-wrap" data-ad-scope="guide" aria-label="Publicité"><p class="ad-label">Annonce</p><div class="ad-unit" data-ad-slot="guide-top"></div></aside>
+
         <section class="guide-section guide-scoring" aria-labelledby="score-title">
           <div class="guide-section-heading">
             <p class="eyebrow">Le score de jeu</p>
@@ -61,17 +72,16 @@
           <p class="guide-body-copy">Les réponses d'un invité restent cachées aux autres invités. Seul l'organisateur consulte le classement et les détails du groupe; chacun peut voir son propre bilan à la fin. Le Serpent du doute est un indice de jeu, parfois vrai et parfois trompeur. Il ne modifie aucun point.</p>
         </section>
 
-        <section id="guide-ad-panel" class="guide-ad-panel" aria-label="Publicité" hidden>
-          <p class="guide-ad-label">Annonce</p>
-          <div id="ad-slot-guide" class="advert-slot" aria-label="Annonce sponsorisée"></div>
-        </section>
+        <aside class="ad-wrap" data-ad-scope="guide" aria-label="Publicité"><p class="ad-label">Annonce</p><div class="ad-unit" data-ad-slot="guide-bottom"></div></aside>
+        <p class="guide-more">Pour aller plus loin : <a href="/dilemmes">parcourir les dilemmes</a> ou lire <a href="/articles/dilemme-du-prisonnier-explique">le dilemme du prisonnier expliqué</a>.</p>
       </main>
-      <footer class="site-footer guide-footer">
+      <footer class="site-footer guide-footer content-footer">
         <span>Un jeu de choix, pas un test de personnalité.</span>
         <a href="/">Retour à la partie</a>
+        {{FOOTER_LINKS}}
       </footer>
     </div>
-    <script src="/ad-config.js?v=2"></script>
-    <script src="/ads.js?v=2" defer></script>
+    <script src="/ad-config.js?v=3"></script>
+    <script src="/ads.js?v=3" defer></script>
   </body>
 </html>

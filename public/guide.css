@@ -21,3 +21,4 @@
 .guide-body-copy{max-width:740px;font-size:13px}
 .guide-footer a{color:#627454;font-weight:600;text-decoration:none}
 @media(max-width:700px){.guide-main{padding-top:31px}.guide-hero{padding:8px 0 5px}.guide-hero .display-title{font-size:clamp(42px,11.3vw,61px)}.guide-section{margin-top:38px}.guide-cards{grid-template-columns:1fr}.guide-card{min-height:unset;padding:19px}.guide-card h3{margin-top:10px}.score-row{grid-template-columns:1fr;gap:6px;padding:16px}.score-row>strong{font-size:20px}}
+.guide-more{max-width:720px;margin:28px 0 0;font-size:15px;line-height:1.6}.guide-more a{color:#4e6a3a;font-weight:700}

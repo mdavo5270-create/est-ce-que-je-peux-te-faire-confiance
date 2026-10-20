@@ -1,11 +1,12 @@
 import { createServer } from "node:http";
 import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
-import { mkdirSync, readFileSync, renameSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, writeFileSync, existsSync, statSync } from "node:fs";
 import { dirname, extname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { personalQuestions, situations } from "./quiz-banks.mjs";
 import { scenarios } from "./scenarios.mjs";
 import { createRemoteStore } from "./remote-store.mjs";
+import { fillStaticHtml, renderNotFound, renderSitePage, siteContext } from "./site-pages.mjs";
 
 const projectDir = dirname(fileURLToPath(import.meta.url));
 const publicDir = resolve(projectDir, "public");
@@ -461,24 +462,44 @@ function publicBaseUrl(request) {
   return new URL(protocol + "://" + host).origin;
 }
 
+function sendPage(response, { status, type, body, cache }) {
+  const data = Buffer.from(body, "utf8");
+  response.writeHead(status, {
+    "content-type": type,
+    "content-length": data.length,
+    "cache-control": cache || "no-cache",
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "strict-origin-when-cross-origin"
+  });
+  response.end(data);
+}
+
 function serveStatic(request, response, pathname) {
   const requested = pathname === "/" ? "index.html" : decodeURIComponent(pathname).replace(/^\/+/, "");
   const filePath = resolve(publicDir, requested);
   if (!filePath.startsWith(publicDir + sep) && filePath !== publicDir) throw new HttpError(404, "Fichier introuvable.");
-  if (!existsSync(filePath)) throw new HttpError(404, "Fichier introuvable.");
+  if (!existsSync(filePath) || !statSync(filePath).isFile()) throw new HttpError(404, "Fichier introuvable.");
   const contentTypes = {
     ".css": "text/css; charset=utf-8",
     ".html": "text/html; charset=utf-8",
     ".js": "text/javascript; charset=utf-8",
     ".json": "application/json; charset=utf-8",
     ".svg": "image/svg+xml",
+    ".txt": "text/plain; charset=utf-8",
+    ".xml": "application/xml; charset=utf-8",
     ".webmanifest": "application/manifest+json; charset=utf-8"
   };
+  const extension = extname(filePath);
+  if (extension === ".html") {
+    // Les pages HTML contiennent des jetons ({{SITE_URL}}, {{FOOTER_LINKS}}...) remplacés à la volée.
+    const html = fillStaticHtml(readFileSync(filePath, "utf8"), siteContext(publicBaseUrl(request)));
+    return sendPage(response, { status: 200, type: contentTypes[".html"], body: html, cache: "no-cache" });
+  }
   const data = readFileSync(filePath);
   response.writeHead(200, {
-    "content-type": contentTypes[extname(filePath)] || "application/octet-stream",
+    "content-type": contentTypes[extension] || "application/octet-stream",
     "content-length": data.length,
-    "cache-control": [".html", ".js", ".css"].includes(extname(filePath)) ? "no-cache" : "public, max-age=3600",
+    "cache-control": [".js", ".css"].includes(extension) ? "no-cache" : "public, max-age=3600",
     "x-content-type-options": "nosniff"
   });
   response.end(data);
@@ -659,9 +680,14 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
 
       if (pathname.startsWith("/api/")) throw new HttpError(404, "Route introuvable.");
       if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "Méthode non prise en charge.");
+      const sitePage = renderSitePage(pathname, siteContext(publicBaseUrl(request)));
+      if (sitePage) return sendPage(response, sitePage);
       return serveStatic(request, response, pathname);
     } catch (error) {
       const status = error instanceof HttpError ? error.status : 500;
+      if (status === 404 && !pathname.startsWith("/api/") && (request.method === "GET" || request.method === "HEAD")) {
+        return sendPage(response, renderNotFound(siteContext(publicBaseUrl(request))));
+      }
       if (!(error instanceof HttpError)) console.error(error);
       return sendJson(response, status, { error: error.message || "Une erreur est survenue." });
     }

@@ -4,12 +4,24 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#f5f4ef" />
-    <meta name="description" content="Un jeu à deux autour du partage, du choix et de la confiance." />
+    <meta name="description" content="Un jeu entre amis autour du partage, du choix et de la confiance : prépare une partie, envoie le lien et découvre qui te connaît le mieux." />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <link rel="canonical" href="{{SITE_URL}}/" />
+    <meta property="og:site_name" content="à deux" />
+    <meta property="og:title" content="Est-ce que je peux te faire confiance ?" />
+    <meta property="og:description" content="Un jeu entre amis autour du partage, du choix et de la confiance." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{SITE_URL}}/" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta name="twitter:card" content="summary" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css?v=3" />
     <link rel="stylesheet" href="/flow.css?v=4" />
     <link rel="stylesheet" href="/animations.css?v=2" />
+    <link rel="stylesheet" href="/ad.css?v=3" />
+    <link rel="stylesheet" href="/content.css?v=1" />
+    {{HOME_JSONLD}}
     <title>Est-ce que je peux te faire confiance ?</title>
   </head>
   <body>
@@ -25,11 +37,29 @@
         </button>
       </header>
       <main id="app" class="main-content" aria-live="polite"></main>
-      <footer class="site-footer">
+      <section class="home-content" aria-labelledby="home-about-title">
+        <h2 id="home-about-title">Un jeu pour savoir si on peut se faire confiance</h2>
+        <p>« Est-ce que je peux te faire confiance ? » met des amis face à des choix : partager ou tout prendre, deviner les réponses de l'organisateur, décider de ce qu'il ferait dans une situation délicate. À la fin, chacun découvre son score sur 100 et l'organisateur voit le classement du groupe. C'est un jeu, pas un test de personnalité : il raconte une partie, pas une vie.</p>
+        <h2>Comment ça marche</h2>
+        <ol class="home-steps">
+          <li><strong>1. Tu prépares</strong>Tu réponds à trois dilemmes tirés au dé, choisis trois questions personnelles et prépares quatre situations.</li>
+          <li><strong>2. Tes amis jouent</strong>Tu envoies le même lien à autant d'amis que tu veux. Chacun répond seul, depuis son téléphone.</li>
+          <li><strong>3. Les résultats tombent</strong>Chaque ami voit son bilan. Toi seul vois le classement et le détail des réponses.</li>
+        </ol>
+        <div class="home-links"><a href="/dilemmes">Parcourir les dilemmes</a><a href="/articles/jeux-de-confiance-entre-amis">6 jeux de confiance entre amis</a><a href="/articles/dilemme-du-prisonnier-explique">Le dilemme du prisonnier expliqué</a></div>
+        <aside class="ad-wrap" data-ad-scope="home" aria-label="Publicité"><p class="ad-label">Annonce</p><div class="ad-unit" data-ad-slot="home-content"></div></aside>
+        <h2>Questions fréquentes</h2>
+        {{HOME_FAQ}}
+      </section>
+      <aside class="ad-wrap" data-ad-scope="results" aria-label="Publicité"><p class="ad-label">Annonce</p><div class="ad-unit" data-ad-slot="results"></div></aside>
+      <footer class="site-footer content-footer">
         <span>Un jeu de choix, pas un test de personnalité. <a href="/guide.html">Comprendre le jeu</a></span>
         <span class="footer-lock"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="2"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg> L'organisateur voit les choix après la partie de chacun</span>
+        {{FOOTER_LINKS}}
       </footer>
     </div>
-    <script type="module" src="/app.js?v=14"></script>
+    <script src="/ad-config.js?v=3"></script>
+    <script src="/ads.js?v=3" defer></script>
+    <script type="module" src="/app.js?v=15"></script>
   </body>
 </html>
