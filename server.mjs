@@ -5,6 +5,7 @@ import { dirname, extname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { personalQuestions, situations } from "./quiz-banks.mjs";
 import { scenarios } from "./scenarios.mjs";
+import { createRemoteStore } from "./remote-store.mjs";
 
 const projectDir = dirname(fileURLToPath(import.meta.url));
 const publicDir = resolve(projectDir, "public");
@@ -59,20 +60,23 @@ function normalizeStoredGame(game) {
   };
 }
 
+function gamesFromArray(stored) {
+  return new Map(stored.map((raw) => {
+    const game = normalizeStoredGame(raw);
+    return [game.id, game];
+  }));
+}
+
 function readGames(dataFile) {
   if (!dataFile || !existsSync(dataFile)) return new Map();
   try {
-    const stored = JSON.parse(readFileSync(dataFile, "utf8"));
-    return new Map(stored.map((raw) => {
-      const game = normalizeStoredGame(raw);
-      return [game.id, game];
-    }));
+    return gamesFromArray(JSON.parse(readFileSync(dataFile, "utf8")));
   } catch {
     return new Map();
   }
 }
 
-function saveGames(games, dataFile) {
+function saveGamesToFile(games, dataFile) {
   if (!dataFile) return;
   mkdirSync(dirname(dataFile), { recursive: true });
   const temporaryFile = dataFile + ".tmp";
@@ -480,8 +484,13 @@ function serveStatic(request, response, pathname) {
   response.end(data);
 }
 
-export function createGameServer({ dataFile = defaultDataFile } = {}) {
-  const games = readGames(dataFile);
+export function createGameServer({ dataFile = defaultDataFile, store = null, initialGames = null } = {}) {
+  const games = initialGames ? gamesFromArray(initialGames) : readGames(dataFile);
+  // Chaque modification est écrite dans le fichier local et, si configuré, dans le stockage distant.
+  const saveGames = (map, file) => {
+    saveGamesToFile(map, file);
+    if (store) store.save(() => JSON.stringify([...map.values()]));
+  };
   return createServer(async (request, response) => {
     const url = new URL(request.url, "http://localhost");
     const pathname = url.pathname;
@@ -663,6 +672,25 @@ const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(imp
 if (isMain) {
   const host = process.env.HOST || "0.0.0.0";
   const port = Number(process.env.PORT || 4173);
-  const server = createGameServer();
+  const store = createRemoteStore();
+  let server;
+  if (store) {
+    try {
+      const initialGames = await store.load();
+      console.log("Stockage distant actif : " + initialGames.length + " partie(s) chargée(s).");
+      server = createGameServer({ dataFile: null, store, initialGames });
+    } catch (error) {
+      console.error("Impossible de lire le stockage distant, arrêt pour ne pas écraser les parties :", error.message);
+      process.exit(1);
+    }
+    for (const signal of ["SIGTERM", "SIGINT"]) {
+      process.on(signal, async () => {
+        await store.flush();
+        process.exit(0);
+      });
+    }
+  } else {
+    server = createGameServer();
+  }
   server.listen(port, host, () => console.log("Est-ce que je peux te faire confiance ? — http://localhost:" + port));
 }

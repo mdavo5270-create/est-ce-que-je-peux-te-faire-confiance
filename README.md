@@ -15,6 +15,16 @@ Ouvre [http://localhost:4173](http://localhost:4173). En développement, `npm ru
 
 Les parties sont enregistrées dans `data/games.json`. Pour choisir un autre port ou fichier, définir `PORT` ou `DATA_FILE`.
 
+## Garder les parties après un redémarrage (hébergeur gratuit)
+
+Sur un hébergeur gratuit comme Render, le disque est effacé à chaque redémarrage ou redéploiement, donc `data/games.json` disparaît. Pour éviter de perdre les parties, le serveur peut les enregistrer dans une base Redis gratuite d'Upstash (aucune dépendance à installer) :
+
+1. Créer une base sur [upstash.com](https://upstash.com) (offre gratuite).
+2. Copier `UPSTASH_REDIS_REST_URL` et `UPSTASH_REDIS_REST_TOKEN` depuis l'onglet REST de la base.
+3. Les définir comme variables d'environnement du service. Au démarrage, le journal affiche « Stockage distant actif ».
+
+Sans ces deux variables, le serveur continue d'utiliser le fichier local. Si la base est injoignable au démarrage, le serveur s'arrête volontairement plutôt que de repartir à vide et d'écraser les parties enregistrées. La clé utilisée est `confiance:games` (modifiable avec `GAMES_KEY`).
+
 ## Parcours d'une partie
 
 1. L'hôte choisit son nom. Il n'a pas besoin de prévoir combien d'amis participeront.
