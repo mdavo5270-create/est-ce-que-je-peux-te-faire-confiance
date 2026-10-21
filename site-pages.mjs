@@ -438,7 +438,8 @@ const page = (status, body, cache = "public, max-age=600") => ({ status, type: H
 export function renderSitePage(pathname, ctx) {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   if (path === "/robots.txt") return { status: 200, type: "text/plain; charset=utf-8", body: robotsTxt(ctx), cache: "public, max-age=3600" };
-  if (path === "/ads.txt") return { status: 200, type: "text/plain; charset=utf-8", body: adsTxt(), cache: "public, max-age=3600" };
+  // Keep ads.txt fresh after deployments so crawlers do not retain an older response.
+  if (path === "/ads.txt") return { status: 200, type: "text/plain; charset=utf-8", body: adsTxt(), cache: "no-store" };
   if (path === "/sitemap.xml") return { status: 200, type: "application/xml; charset=utf-8", body: sitemapXml(ctx), cache: "public, max-age=3600" };
   if (path === "/dilemmes") return page(200, dilemmaHub(ctx));
   if (path.startsWith("/dilemmes/")) {
