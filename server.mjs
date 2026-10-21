@@ -516,6 +516,11 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
     const url = new URL(request.url, "http://localhost");
     const pathname = url.pathname;
     try {
+      // Adresse de ping pour les services de surveillance : répond « ok » quelle que soit la méthode.
+      if (pathname === "/healthz") {
+        response.writeHead(200, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
+        return response.end(request.method === "HEAD" ? undefined : "ok");
+      }
       if (pathname === "/api/health" && request.method === "GET") {
         return sendJson(response, 200, { ok: true, dilemmas: scenarios.length, personalQuestions: personalQuestions.length, situations: situations.length });
       }

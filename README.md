@@ -34,6 +34,8 @@ Changer le nombre de bases est possible : au démarrage, chaque partie mal plac�
 
 **Anti-archivage.** Au démarrage puis toutes les 24 heures, le serveur écrit un petit signe de vie dans chaque base : une base gratuite restée inactive finirait archivée.
 
+**Garder le service éveillé.** `/healthz` répond « ok » à toute méthode HTTP : c'est l'adresse à appeler à intervalle régulier (par exemple avec un « schedule » QStash en cron `*/5 * * * *`) pour que Render ne mette pas le service en veille.
+
 Sans ces variables, le serveur continue d'utiliser le fichier local. Les parties sont rangées sous la clé `confiance:games:h` (modifiable avec `GAMES_KEY`).
 
 ## Parcours d'une partie

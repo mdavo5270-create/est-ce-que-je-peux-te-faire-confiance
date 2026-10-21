@@ -228,3 +228,15 @@ test("une partie créée survit au redémarrage du serveur, avec plusieurs bases
   });
   assert.equal(again.status, 200);
 });
+
+test("l'adresse /healthz répond « ok » quelle que soit la méthode (ping des services de surveillance)", async (t) => {
+  const server = createGameServer({ dataFile: null });
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const base = "http://127.0.0.1:" + server.address().port;
+  for (const method of ["GET", "POST", "HEAD"]) {
+    const response = await fetch(base + "/healthz", { method });
+    assert.equal(response.status, 200, method);
+    if (method !== "HEAD") assert.equal(await response.text(), "ok");
+  }
+});
