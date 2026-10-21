@@ -335,4 +335,3 @@ test("the server preserves locked game state across a restart", async (t) => {
   assert.equal(persisted.host.rounds[0].choice,"PARTAGER","the locked choice is saved privately on disk");
   t.after(()=>{try{unlinkSync(dataFile);}catch{}try{unlinkSync(dataFile+".tmp");}catch{}});
 });
-

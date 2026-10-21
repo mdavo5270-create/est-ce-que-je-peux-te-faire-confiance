@@ -62,6 +62,17 @@ $env:PUBLIC_URL = "http://192.168.1.20:4173"
 npm start
 ```
 
+## Animations
+
+Les animations sont isolées de la logique du jeu :
+
+- `public/animations.css` : l'illustration animée du Serpent du doute.
+- `public/motion.js` et `public/motion.css` : tout le reste (transitions entre écrans, lancer de dés, retour sur les choix, compteurs et jauges des résultats, classement en direct, détails des parties).
+
+`motion.js` intercepte l'affectation `app.innerHTML` de `app.js`, compare l'écran d'avant et celui d'après, puis anime uniquement ce qui a changé : un nouvel écran déclenche un fondu croisé et une entrée orchestrée, une simple mise à jour (sélection, nouveau classement) ne rejoue pas les animations d'entrée. `app.js` n'a pas besoin de le connaître, et une erreur dans `motion.js` ne bloque jamais le jeu. L'option système « réduire les animations » est respectée.
+
+Quand `motion.js` ou `motion.css` change, incrémenter le numéro `?v=` correspondant dans `public/index.html`.
+
 ## Tests
 
 ```sh
@@ -103,4 +114,3 @@ L'annonce récompensée du Serpent nécessiterait Google Ad Manager et reste fac
 ## Contenu
 
 La banque actuelle comprend 110 dilemmes. Le fichier [120-dilemmes-a-evaluer.md](120-dilemmes-a-evaluer.md) est conservé pour la prochaine réécriture et l'évaluation par Claude; les textes pourront être remplacés ensuite sans changer les règles du jeu. Les choix éditoriaux et les références générales sont dans [SOURCES.md](SOURCES.md).
-

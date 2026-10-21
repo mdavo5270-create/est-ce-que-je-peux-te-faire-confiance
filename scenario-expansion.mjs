@@ -152,4 +152,3 @@ export const extraScenarios = [
     ["eau-urgence", 5, "Le réservoir partagé", "Le village de ta sœur n'a presque plus d'eau potable. Elle dit que les enfants commencent à être malades, puis la communication se coupe.", "un réservoir mobile et une équipe pour approvisionner un quartier ou donner une réserve limitée à deux quartiers.", "tu ne sais pas si l'autre distribuera sa part ou remplira d'abord la réserve de son propre proche.", "L'équipe répartit l'eau entre les deux quartiers; chaque réserve doit être rationnée.", "Le conflit retarde la distribution et le réservoir repart sans eau."]
   ])
 ];
-

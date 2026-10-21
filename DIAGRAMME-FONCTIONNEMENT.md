@@ -87,4 +87,3 @@ sequenceDiagram
 ```
 
 Le lien commun reste ouvert; A peut le partager avec un nombre d'amis non plafonné par le jeu. Chaque invité reçoit un jeton individuel et voit son propre résultat dès qu'il termine. Le classement ne contient que les amis qui ont terminé et se met à jour pour A et pour les joueurs déjà terminés. Les réponses des invités ne sont pas révélées aux autres joueurs.
-

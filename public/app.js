@@ -367,4 +367,3 @@ app.addEventListener("click",handleClick);app.addEventListener("change",handleCh
 app.addEventListener("input",event=>{if(event.target.id==="leaderboard-search"){resultUiState.query=event.target.value;filterResults(resultUiState.query);}});
 app.addEventListener("toggle",event=>{const details=event.target.closest?.("details.match-accordion");if(!details)return;if(details.open){resultUiState.openGuestId=details.dataset.matchId;hydrateMatchDetails(details);}else if(resultUiState.openGuestId===details.dataset.matchId)resultUiState.openGuestId=null;},true);
 (async function init(){try{banks=await request("/api/banks");identity=restoreIdentity();if(identity)await refreshGame();else showHome();}catch(error){showHome("Impossible de charger les questions : "+error.message);}})();
-
