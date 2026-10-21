@@ -508,9 +508,9 @@ function serveStatic(request, response, pathname) {
 export function createGameServer({ dataFile = defaultDataFile, store = null, initialGames = null } = {}) {
   const games = initialGames ? gamesFromArray(initialGames) : readGames(dataFile);
   // Chaque modification est écrite dans le fichier local et, si configuré, dans le stockage distant.
-  const saveGames = (map, file) => {
+  const saveGames = (map, file, changedGame) => {
     saveGamesToFile(map, file);
-    if (store) store.save(() => JSON.stringify([...map.values()]));
+    if (store && changedGame) store.saveGame(changedGame);
   };
   const server = createServer(async (request, response) => {
     const url = new URL(request.url, "http://localhost");
@@ -540,7 +540,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
           serpentHints: null
         };
         games.set(id, game);
-        saveGames(games, dataFile);
+        saveGames(games, dataFile, game);
         return sendJson(response, 201, { id, token: game.host.token, role: "A" });
       }
 
@@ -549,7 +549,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
         const [, id, action] = match;
         const game = games.get(id);
         if (!game) throw new HttpError(404, "Cette partie est introuvable.");
-        if (ensureSerpentHints(game)) saveGames(games, dataFile);
+        if (ensureSerpentHints(game)) saveGames(games, dataFile, game);
 
         if (action === "join" && request.method === "POST") {
           const body = await readJson(request);
@@ -571,7 +571,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
             progress: 0
           };
           game.guests.push(guest);
-          saveGames(games, dataFile);
+          saveGames(games, dataFile, game);
           return sendJson(response, 201, { id: game.id, role: "B", guestId: guest.id, token: guest.token, data: playerView(game, "B", guest) });
         }
 
@@ -590,7 +590,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
           if (!game.serpentHints?.[stage.index]) throw new HttpError(409, "L'indice du Serpent n'est pas disponible pour ce dilemme.");
           if (!Array.isArray(guest.serpentUnlockedTurns)) guest.serpentUnlockedTurns = [];
           if (!guest.serpentUnlockedTurns.includes(body.turn)) guest.serpentUnlockedTurns.push(body.turn);
-          saveGames(games, dataFile);
+          saveGames(games, dataFile, game);
           return sendJson(response, 200, playerView(game, role, guest));
         }
 
@@ -599,7 +599,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
           if (!hostCompleted(game.host)) throw new HttpError(409, "Termine les trois dilemmes avant de préparer les questions.");
           if (game.guests.length > 0) throw new HttpError(409, "La préparation est verrouillée dès qu'un ami rejoint la partie.");
           game.setup = validateSetup(await readJson(request));
-          saveGames(games, dataFile);
+          saveGames(games, dataFile, game);
           return sendJson(response, 200, playerView(game, role));
         }
 
@@ -628,7 +628,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
           const available = scenarios.filter((item) => !usedIds.has(item.id));
           const scenario = chooseScenario(total, available, player.severityChain[player.rounds.length]);
           player.rounds.push({ dice, total, scenarioId: scenario.id, choice: null });
-          saveGames(games, dataFile);
+          saveGames(games, dataFile, game);
           return sendJson(response, 201, playerView(game, role));
         }
 
@@ -650,7 +650,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
             current.choice = body.choice;
             guest.progress += 1;
           }
-          saveGames(games, dataFile);
+          saveGames(games, dataFile, game);
           return sendJson(response, 200, playerView(game, role, guest));
         }
 
@@ -673,7 +673,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
           if (stage.type === "personal") guest.personalAnswers[stage.index] = body.choiceIndex;
           else guest.situationAnswers[stage.index] = body.choiceIndex;
           guest.progress += 1;
-          saveGames(games, dataFile);
+          saveGames(games, dataFile, game);
           return sendJson(response, 200, playerView(game, role, guest));
         }
       }
@@ -692,8 +692,10 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
       return sendJson(response, status, { error: error.message || "Une erreur est survenue." });
     }
   });
-  // Réécrit l'état actuel dans toutes les bases (rattrapage au démarrage + « battement de cœur » quotidien).
-  server.persistNow = () => saveGames(games, dataFile);
+  // Écriture minuscule dans chaque base (au démarrage puis chaque jour) pour qu'elles ne soient pas archivées.
+  server.persistNow = () => {
+    if (store) store.touch();
+  };
   return server;
 }
 
@@ -706,10 +708,10 @@ if (isMain) {
   if (store) {
     try {
       const initialGames = await store.load();
-      console.log("Stockage distant actif : " + initialGames.length + " partie(s) chargée(s), " + store.size + " base(s).");
+      console.log("Stockage distant actif : " + initialGames.length + " partie(s) chargée(s), " + store.size + " base(s)" + (store.hasCollector ? " + 1 collectrice." : "."));
       server = createGameServer({ dataFile: null, store, initialGames });
-      // Remet toutes les bases à jour (rattrape une base de secours vide ou en retard),
-      // puis une écriture par jour : une base inutilisée finirait archivée par Upstash.
+      // Une petite écriture dans chaque base au démarrage, puis une par jour :
+      // une base inutilisée finirait archivée par Upstash.
       server.persistNow();
       setInterval(() => server.persistNow(), 24 * 60 * 60 * 1000).unref();
     } catch (error) {

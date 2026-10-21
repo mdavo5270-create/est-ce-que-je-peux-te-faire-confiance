@@ -17,17 +17,24 @@ Les parties sont enregistrées dans `data/games.json`. Pour choisir un autre por
 
 ## Garder les parties après un redémarrage (hébergeur gratuit)
 
-Sur un hébergeur gratuit comme Render, le disque est effacé à chaque redémarrage ou redéploiement, donc `data/games.json` disparaît. Pour éviter de perdre les parties, le serveur peut les enregistrer dans une base Redis gratuite d'Upstash (aucune dépendance à installer) :
+Sur un hébergeur gratuit comme Render, le disque est effacé à chaque redémarrage ou redéploiement, donc `data/games.json` disparaît. Pour éviter de perdre les parties, le serveur peut les enregistrer dans des bases Redis gratuites d'[Upstash](https://upstash.com) (aucune dépendance à installer).
 
-1. Créer une base sur [upstash.com](https://upstash.com) (offre gratuite).
-2. Copier `UPSTASH_REDIS_REST_URL` et `UPSTASH_REDIS_REST_TOKEN` depuis l'onglet REST de la base.
-3. Les définir comme variables d'environnement du service. Au démarrage, le journal affiche « Stockage distant actif ».
+**Une base, ou jusqu'à 5 pour répartir la charge.** Chaque base se déclare avec deux variables d'environnement :
 
-Sans ces deux variables, le serveur continue d'utiliser le fichier local. Si la base est injoignable au démarrage, le serveur s'arrête volontairement plutôt que de repartir à vide et d'écraser les parties enregistrées. La clé utilisée est `confiance:games` (modifiable avec `GAMES_KEY`).
+| Base | URL | Token |
+| --- | --- | --- |
+| 1 | `UPSTASH_REDIS_REST_URL` | `UPSTASH_REDIS_REST_TOKEN` |
+| 2 à 5 | `UPSTASH_REDIS_REST_URL_2` … `_5` | `UPSTASH_REDIS_REST_TOKEN_2` … `_5` |
 
-**Bases de secours.** On peut brancher jusqu'à 5 bases : la première avec `UPSTASH_REDIS_REST_URL` et `UPSTASH_REDIS_REST_TOKEN`, les suivantes avec `UPSTASH_REDIS_REST_URL_2` et `UPSTASH_REDIS_REST_TOKEN_2`, puis `_3`, `_4`, `_5`. Chaque sauvegarde est envoyée à toutes les bases en parallèle ; une base en panne ne bloque pas les autres et sera retentée. Au démarrage, le serveur lit toutes les bases, garde la version la plus récente et remet les autres à jour. Il refuse de démarrer si une base est illisible et qu'aucune autre n'a de données, pour ne rien écraser.
+Chaque partie est rangée dans **une seule** base, choisie d'après son identifiant : avec 5 bases, chacune reçoit environ un cinquième des parties et des écritures. Une action de joueur n'écrit que sa propre partie, jamais l'ensemble. Au démarrage, le serveur lit toutes les bases et au journal apparaît « Stockage distant actif ».
 
-**Anti-archivage.** Au démarrage puis toutes les 24 heures, le serveur réécrit l'état dans chaque base : une base gratuite restée inactive finirait archivée.
+**Base collectrice (facultative).** Avec `UPSTASH_REDIS_REST_URL_COLLECTOR` et `UPSTASH_REDIS_REST_TOKEN_COLLECTOR`, une base supplémentaire rassemble toutes les parties : le serveur lui envoie en un seul lot, à intervalle régulier, les parties modifiées depuis le dernier envoi (toutes les 60 secondes par défaut, réglable avec `COLLECT_INTERVAL_SECONDS`). C'est aussi la copie de secours : si une base de répartition est illisible au démarrage, ses parties sont reprises depuis la collectrice. Sans collectrice, le serveur refuse de démarrer quand une base est illisible, plutôt que de perdre ou d'écraser des parties.
+
+Changer le nombre de bases est possible : au démarrage, chaque partie mal placée est recopiée dans sa nouvelle base puis retirée de l'ancienne.
+
+**Anti-archivage.** Au démarrage puis toutes les 24 heures, le serveur écrit un petit signe de vie dans chaque base : une base gratuite restée inactive finirait archivée.
+
+Sans ces variables, le serveur continue d'utiliser le fichier local. Les parties sont rangées sous la clé `confiance:games:h` (modifiable avec `GAMES_KEY`).
 
 ## Parcours d'une partie
 
