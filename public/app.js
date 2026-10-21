@@ -270,7 +270,9 @@ async function doRoll(button){
 }
 async function choose(choice){
   setBusy(true);
-  try{renderGame(await request("/api/games/"+encodeURIComponent(identity.id)+"/choice",{method:"POST",token:identity.token,body:{choice}}));}
+  // On indique l'étape validée : le serveur refuse un doublon (double clic, deux onglets).
+  const position=game.role==="A"?{turn:game.myRounds.at(-1)?.turn}:{step:game.progress};
+  try{renderGame(await request("/api/games/"+encodeURIComponent(identity.id)+"/choice",{method:"POST",token:identity.token,body:{choice,...position}}));}
   catch(error){toast(error.message);await refreshGame(false);}finally{busy=false;}
 }
 function ensureInviteUrl(){
@@ -293,7 +295,7 @@ async function saveSetup(event){
   catch(error){document.querySelector("#setup-error").textContent=error.message;button.disabled=false;}
 }
 async function answer(type,choiceIndex){
-  setBusy(true);try{renderGame(await request("/api/games/"+encodeURIComponent(identity.id)+"/answer",{method:"POST",token:identity.token,body:{type,choiceIndex}}));}
+  setBusy(true);try{renderGame(await request("/api/games/"+encodeURIComponent(identity.id)+"/answer",{method:"POST",token:identity.token,body:{type,choiceIndex,step:game.progress}}));}
   catch(error){toast(error.message);await refreshGame(false);}finally{busy=false;}
 }
 function selectPending(kind,value){

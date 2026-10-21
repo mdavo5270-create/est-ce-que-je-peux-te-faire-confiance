@@ -7,6 +7,13 @@ import { personalQuestions, situations } from "./quiz-banks.mjs";
 import { scenarios } from "./scenarios.mjs";
 import { createRemoteStore } from "./remote-store.mjs";
 import { fillStaticHtml, renderNotFound, renderSitePage, siteContext } from "./site-pages.mjs";
+import {
+  cleanName, clientIp, createRateLimiter, guestCookie, guestCookieName, isHttps, parseCookies, safeOrigin, securityHeaders
+} from "./security.mjs";
+
+const MAX_GAMES = Number(process.env.MAX_GAMES || 20000);
+const MAX_GUESTS_PER_GAME = Number(process.env.MAX_GUESTS_PER_GAME || 500);
+const TRUST_PROXY_HOPS = Number(process.env.TRUST_PROXY_HOPS ?? 1);
 
 const projectDir = dirname(fileURLToPath(import.meta.url));
 const publicDir = resolve(projectDir, "public");
@@ -103,20 +110,25 @@ async function readJson(request) {
     if (Buffer.byteLength(body) > 16_384) throw new HttpError(413, "La requête est trop volumineuse.");
   }
   if (!body) return {};
-  try { return JSON.parse(body); }
+  let parsed;
+  try { parsed = JSON.parse(body); }
   catch { throw new HttpError(400, "Le contenu envoyé n'est pas valide."); }
+  // Un corps « null », une liste ou un nombre ferait planter les contrôles qui suivent.
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new HttpError(400, "Le contenu envoyé n'est pas valide.");
+  return parsed;
 }
 
-function tokenFrom(request, url) {
+// Le jeton ne voyage que dans l'en-tête Authorization : dans l'adresse, il finirait dans les journaux,
+// l'historique du navigateur et les en-têtes Referer.
+function tokenFrom(request) {
   const authorization = request.headers.authorization || "";
-  if (authorization.startsWith("Bearer ")) return authorization.slice(7);
-  return url.searchParams.get("token") || "";
+  return authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
 }
 
-function getAuthorizedGame(request, url, games, id) {
+function getAuthorizedGame(request, games, id) {
   const game = games.get(id);
   if (!game) throw new HttpError(404, "Cette partie est introuvable.");
-  const token = tokenFrom(request, url);
+  const token = tokenFrom(request);
   if (safeEqual(token, game.host.token)) return { game, role: "A", guest: null };
   const guest = game.guests.find((item) => safeEqual(token, item.token));
   if (guest) return { game, role: "B", guest };
@@ -190,6 +202,9 @@ function round1(value) {
 function validateSetup(body) {
   if (!body || !Array.isArray(body.personal) || body.personal.length !== 3 || !Array.isArray(body.situations) || body.situations.length !== 4) {
     throw new HttpError(400, "Choisis trois questions personnelles et quatre mises en situation.");
+  }
+  if (![...body.personal, ...body.situations].every((entry) => entry && typeof entry === "object")) {
+    throw new HttpError(400, "Les réponses envoyées ne sont pas valides.");
   }
   const personal = body.personal.map((entry) => {
     const question = personalById.get(entry.id);
@@ -456,10 +471,7 @@ function playerView(game, role, guest = null) {
 }
 
 function publicBaseUrl(request) {
-  if (process.env.PUBLIC_URL) return new URL(process.env.PUBLIC_URL).origin;
-  const protocol = request.headers["x-forwarded-proto"] && request.headers["x-forwarded-proto"].split(",")[0].trim() || "http";
-  const host = request.headers.host || "localhost:" + (process.env.PORT || 4173);
-  return new URL(protocol + "://" + host).origin;
+  return safeOrigin(request, { publicUrl: process.env.PUBLIC_URL, port: process.env.PORT || 4173 });
 }
 
 function sendPage(response, { status, type, body, cache }) {
@@ -475,7 +487,10 @@ function sendPage(response, { status, type, body, cache }) {
 }
 
 function serveStatic(request, response, pathname) {
-  const requested = pathname === "/" ? "index.html" : decodeURIComponent(pathname).replace(/^\/+/, "");
+  let requested;
+  try { requested = pathname === "/" ? "index.html" : decodeURIComponent(pathname).replace(/^\/+/, ""); }
+  catch { throw new HttpError(404, "Fichier introuvable."); }
+  if (requested.includes("\0")) throw new HttpError(404, "Fichier introuvable.");
   const filePath = resolve(publicDir, requested);
   if (!filePath.startsWith(publicDir + sep) && filePath !== publicDir) throw new HttpError(404, "Fichier introuvable.");
   if (!existsSync(filePath) || !statSync(filePath).isFile()) throw new HttpError(404, "Fichier introuvable.");
@@ -508,14 +523,36 @@ function serveStatic(request, response, pathname) {
 export function createGameServer({ dataFile = defaultDataFile, store = null, initialGames = null } = {}) {
   const games = initialGames ? gamesFromArray(initialGames) : readGames(dataFile);
   // Chaque modification est écrite dans le fichier local et, si configuré, dans le stockage distant.
-  const saveGames = (map, file, changedGame) => {
+  // Renvoie une promesse : le serveur répond au joueur APRÈS la confirmation d'écriture, pour qu'un choix
+  // validé soit déjà enregistré quand le joueur voit « verrouillé ». L'état en mémoire est de toute façon
+  // déjà verrouillé (aucun retour en arrière possible) et reste en file d'écriture si la base tarde.
+  const saveGames = async (map, file, changedGame) => {
     saveGamesToFile(map, file);
-    if (store && changedGame) store.saveGame(changedGame);
+    if (!store || !changedGame) return true;
+    const confirmed = await store.saveGame(changedGame);
+    if (!confirmed) console.error("Écriture distante non confirmée à temps (partie " + changedGame.id + ") : elle reste en file d'attente.");
+    return confirmed;
+  };
+  const generalLimiter = createRateLimiter({ windowMs: 60_000, max: Number(process.env.RATE_LIMIT_PER_MINUTE || 600) });
+  const createLimiter = createRateLimiter({ windowMs: 10 * 60_000, max: Number(process.env.CREATE_LIMIT_PER_10MIN || 30) });
+  const joinLimiter = createRateLimiter({ windowMs: 10 * 60_000, max: Number(process.env.JOIN_LIMIT_PER_10MIN || 60) });
+  const rateLimited = (limiter, key) => {
+    const result = limiter.hit(key);
+    if (!result.allowed) {
+      const error = new HttpError(429, "Trop de requêtes. Réessaie dans " + result.retryAfterSeconds + " secondes.");
+      error.retryAfter = result.retryAfterSeconds;
+      throw error;
+    }
   };
   const server = createServer(async (request, response) => {
-    const url = new URL(request.url, "http://localhost");
+    let url;
+    try { url = new URL(request.url, "http://localhost"); }
+    catch { response.writeHead(400); return response.end(); }
     const pathname = url.pathname;
+    for (const [name, value] of Object.entries(securityHeaders({ https: isHttps(request, process.env.PUBLIC_URL) }))) response.setHeader(name, value);
+    const ip = clientIp(request, TRUST_PROXY_HOPS);
     try {
+      if (pathname.startsWith("/api/")) rateLimited(generalLimiter, ip);
       // Adresse de ping pour les services de surveillance : répond « ok » quelle que soit la méthode.
       if (pathname === "/healthz") {
         response.writeHead(200, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
@@ -528,8 +565,10 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
         return sendJson(response, 200, { personalQuestions, situations });
       }
       if (pathname === "/api/games" && request.method === "POST") {
+        rateLimited(createLimiter, ip);
+        if (games.size >= MAX_GAMES) throw new HttpError(503, "Le service est saturé. Réessaie plus tard.");
         const body = await readJson(request);
-        const name = typeof body.name === "string" ? body.name.trim().slice(0, 32) : "";
+        const name = cleanName(body.name);
         if (!name) throw new HttpError(400, "Indique ton prénom ou un pseudo pour commencer.");
         let id;
         do { id = randomBytes(9).toString("base64url"); } while (games.has(id));
@@ -545,7 +584,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
           serpentHints: null
         };
         games.set(id, game);
-        saveGames(games, dataFile, game);
+        await saveGames(games, dataFile, game);
         return sendJson(response, 201, { id, token: game.host.token, role: "A" });
       }
 
@@ -554,14 +593,24 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
         const [, id, action] = match;
         const game = games.get(id);
         if (!game) throw new HttpError(404, "Cette partie est introuvable.");
-        if (ensureSerpentHints(game)) saveGames(games, dataFile, game);
+        if (ensureSerpentHints(game)) await saveGames(games, dataFile, game);
 
         if (action === "join" && request.method === "POST") {
+          rateLimited(joinLimiter, ip);
           const body = await readJson(request);
-          const name = typeof body.name === "string" ? body.name.trim().slice(0, 32) : "";
-          if (!name) throw new HttpError(400, "Choisis un prénom ou un pseudo.");
           if (!safeEqual(body.invite, game.inviteToken)) throw new HttpError(401, "Ce lien d'invitation n'est pas valide.");
           if (!hostCompleted(game.host) || !game.setup) throw new HttpError(409, "Le joueur A prépare encore la partie.");
+          // Un navigateur = une session d'invité par partie. Rouvrir le lien (autre pseudo, stockage de la
+          // page vidé, autre onglet) reprend la session existante : on ne peut pas finir la partie, lire les
+          // réponses de référence puis la rejouer avec de nouveaux pseudos.
+          const cookieToken = parseCookies(request.headers.cookie).get(guestCookieName(game.id));
+          const resumed = cookieToken ? game.guests.find((item) => safeEqual(cookieToken, item.token)) : null;
+          if (resumed) {
+            return sendJson(response, 200, { id: game.id, role: "B", guestId: resumed.id, token: resumed.token, resumed: true, data: playerView(game, "B", resumed) });
+          }
+          const name = cleanName(body.name);
+          if (!name) throw new HttpError(400, "Choisis un prénom ou un pseudo.");
+          if (game.guests.length >= MAX_GUESTS_PER_GAME) throw new HttpError(409, "Cette partie a atteint son nombre maximal d'invités.");
           if (game.guests.some((guest) => guest.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
             throw new HttpError(409, "Ce pseudo est déjà utilisé dans cette partie. Choisis-en un autre.");
           }
@@ -576,11 +625,12 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
             progress: 0
           };
           game.guests.push(guest);
-          saveGames(games, dataFile, game);
+          await saveGames(games, dataFile, game);
+          response.setHeader("set-cookie", guestCookie(game.id, guest.token, { https: isHttps(request, process.env.PUBLIC_URL) }));
           return sendJson(response, 201, { id: game.id, role: "B", guestId: guest.id, token: guest.token, data: playerView(game, "B", guest) });
         }
 
-        const authorized = getAuthorizedGame(request, url, games, id);
+        const authorized = getAuthorizedGame(request, games, id);
         const { role, guest } = authorized;
         if (!action && request.method === "GET") return sendJson(response, 200, playerView(game, role, guest));
 
@@ -595,7 +645,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
           if (!game.serpentHints?.[stage.index]) throw new HttpError(409, "L'indice du Serpent n'est pas disponible pour ce dilemme.");
           if (!Array.isArray(guest.serpentUnlockedTurns)) guest.serpentUnlockedTurns = [];
           if (!guest.serpentUnlockedTurns.includes(body.turn)) guest.serpentUnlockedTurns.push(body.turn);
-          saveGames(games, dataFile, game);
+          await saveGames(games, dataFile, game);
           return sendJson(response, 200, playerView(game, role, guest));
         }
 
@@ -603,8 +653,11 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
           if (role !== "A") throw new HttpError(403, "Seul le joueur A prépare les questions.");
           if (!hostCompleted(game.host)) throw new HttpError(409, "Termine les trois dilemmes avant de préparer les questions.");
           if (game.guests.length > 0) throw new HttpError(409, "La préparation est verrouillée dès qu'un ami rejoint la partie.");
-          game.setup = validateSetup(await readJson(request));
-          saveGames(games, dataFile, game);
+          const validatedSetup = validateSetup(await readJson(request));
+          // Pendant la lecture du corps, un ami a pu rejoindre : on revérifie juste avant d'écrire.
+          if (game.guests.length > 0 || game.setup) throw new HttpError(409, "La préparation est verrouillée.");
+          game.setup = validatedSetup;
+          await saveGames(games, dataFile, game);
           return sendJson(response, 200, playerView(game, role));
         }
 
@@ -633,7 +686,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
           const available = scenarios.filter((item) => !usedIds.has(item.id));
           const scenario = chooseScenario(total, available, player.severityChain[player.rounds.length]);
           player.rounds.push({ dice, total, scenarioId: scenario.id, choice: null });
-          saveGames(games, dataFile, game);
+          await saveGames(games, dataFile, game);
           return sendJson(response, 201, playerView(game, role));
         }
 
@@ -645,17 +698,23 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
             if (game.setup) throw new HttpError(409, "Ces trois choix sont déjà verrouillés.");
             if (!current || current.choice !== null) throw new HttpError(409, "Aucun dilemme modifiable n'est en attente.");
             if (body.choice !== "PARTAGER" && body.choice !== "VOLER") throw new HttpError(400, "Choisis PARTAGER ou VOLER.");
+            // Le client indique le dilemme qu'il croit valider : un double envoi ne peut pas toucher le suivant.
+            if (body.turn !== undefined && body.turn !== player.rounds.length) throw new HttpError(409, "Ce dilemme n'est plus celui en cours.");
             current.choice = body.choice;
           } else {
             const stage = guestFlow[guest.progress];
             if (!stage || stage.type !== "dilemma") throw new HttpError(409, "Le prochain choix demandé n'est pas un dilemme.");
             if (body.choice !== "PARTAGER" && body.choice !== "VOLER") throw new HttpError(400, "Choisis PARTAGER ou VOLER.");
+            // Sans ce contrôle, un double clic (ou deux onglets) appliquerait la 2e réponse à l'étape suivante.
+            if (body.step !== undefined && body.step !== guest.progress) throw new HttpError(409, "Cette étape est déjà validée.");
             const current = guest.rounds[stage.index];
             if (!current || current.choice !== null) throw new HttpError(409, "Ce dilemme est déjà verrouillé.");
             current.choice = body.choice;
             guest.progress += 1;
           }
-          saveGames(games, dataFile, game);
+          // Le choix est verrouillé en mémoire (aucune route ne permet de le changer) ; on attend l'écriture
+          // durable avant de répondre pour que « verrouillé » à l'écran signifie « enregistré ».
+          await saveGames(games, dataFile, game);
           return sendJson(response, 200, playerView(game, role, guest));
         }
 
@@ -666,6 +725,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
           if (!stage || !["personal", "situation"].includes(stage.type) || stage.type !== body.type) {
             throw new HttpError(409, "Cette question n'est pas la prochaine étape de la partie.");
           }
+          if (body.step !== undefined && body.step !== guest.progress) throw new HttpError(409, "Cette étape est déjà validée.");
           const questionId = stage.type === "personal"
             ? game.setup.personal[stage.index].id
             : game.setup.situations[stage.index].id;
@@ -678,7 +738,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
           if (stage.type === "personal") guest.personalAnswers[stage.index] = body.choiceIndex;
           else guest.situationAnswers[stage.index] = body.choiceIndex;
           guest.progress += 1;
-          saveGames(games, dataFile, game);
+          await saveGames(games, dataFile, game);
           return sendJson(response, 200, playerView(game, role, guest));
         }
       }
@@ -694,9 +754,15 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
         return sendPage(response, renderNotFound(siteContext(publicBaseUrl(request))));
       }
       if (!(error instanceof HttpError)) console.error(error);
-      return sendJson(response, status, { error: error.message || "Une erreur est survenue." });
+      if (error.retryAfter) response.setHeader("retry-after", String(error.retryAfter));
+      // Les erreurs inattendues ne révèlent jamais leur détail interne au client.
+      return sendJson(response, status, { error: error instanceof HttpError ? error.message : "Une erreur est survenue." });
     }
   });
+  // Protection contre les connexions qui envoient leur requête au compte-gouttes.
+  server.headersTimeout = 15_000;
+  server.requestTimeout = 30_000;
+  server.keepAliveTimeout = 5_000;
   // Écriture minuscule dans chaque base (au démarrage puis chaque jour) pour qu'elles ne soient pas archivées.
   server.persistNow = () => {
     if (store) store.touch();

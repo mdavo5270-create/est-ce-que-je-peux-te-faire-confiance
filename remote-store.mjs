@@ -153,13 +153,29 @@ function createBackend({ url, token, label }, { key, fetchImpl, log, retryDelayM
   // File d'écriture : une entrée par partie (la plus récente gagne), envoyée par lots.
   // Chaque base a sa propre file : une base en panne ne bloque pas les autres.
   // Une base « différée » (la collectrice) n'envoie que lorsqu'on appelle kick().
+  // pending : id → { json, seq }. `seq` numérote chaque demande d'écriture : quand une version est
+  // enregistrée, toutes les demandes plus anciennes de la même partie le sont aussi (la plus récente gagne).
   const pending = new Map();
+  const waiters = new Map(); // id → [{ seq, done }] : appelants qui attendent l'écriture durable
+  let sequence = 0;
   let busy = false;
   let retryScheduled = false;
   let currentRun = Promise.resolve();
 
   function requeue(items) {
-    for (const [id, json] of items) if (!pending.has(id)) pending.set(id, json);
+    for (const [id, entry] of items) if (!pending.has(id)) pending.set(id, entry);
+  }
+
+  function confirmWritten(id, seq) {
+    const list = waiters.get(id);
+    if (!list) return;
+    const remaining = [];
+    for (const waiter of list) {
+      if (waiter.seq <= seq) waiter.done(true);
+      else remaining.push(waiter);
+    }
+    if (remaining.length) waiters.set(id, remaining);
+    else waiters.delete(id);
   }
 
   async function run() {
@@ -170,13 +186,16 @@ function createBackend({ url, token, label }, { key, fetchImpl, log, retryDelayM
         for (const [id] of batch) pending.delete(id);
         let results;
         try {
-          results = await pipeline(batch.map(([id, json]) => ["HSET", key, id, json]));
+          results = await pipeline(batch.map(([id, entry]) => ["HSET", key, id, entry.json]));
         } catch (error) {
           requeue(batch);
           log.error("Sauvegarde distante échouée (" + label + ") :", error.message);
           scheduleRetry();
           break;
         }
+        batch.forEach(([id, entry], index) => {
+          if (!results[index].error) confirmWritten(id, entry.seq);
+        });
         const failed = batch.filter((_, index) => results[index].error);
         if (failed.length) {
           requeue(failed);
@@ -200,9 +219,36 @@ function createBackend({ url, token, label }, { key, fetchImpl, log, retryDelayM
     if (typeof timer.unref === "function") timer.unref();
   }
 
-  function enqueue(id, json) {
-    pending.set(id, json);
+  // Renvoie une promesse qui vaut true dès que cette version (ou une plus récente) de la partie est
+  // enregistrée, et false si l'écriture n'a pas abouti dans `waitMs` (elle reste alors en file et sera
+  // retentée). La promesse n'est jamais rejetée. Avec waitMs = 0, on n'attend pas.
+  function enqueue(id, json, waitMs = 0) {
+    sequence += 1;
+    const seq = sequence;
+    pending.set(id, { json, seq });
+    let confirmation = Promise.resolve(true);
+    if (!deferred && waitMs > 0) {
+      confirmation = new Promise((resolve) => {
+        let timer = null;
+        const waiter = {
+          seq,
+          done: (value) => {
+            clearTimeout(timer);
+            resolve(value);
+          }
+        };
+        timer = setTimeout(() => {
+          const list = (waiters.get(id) || []).filter((item) => item !== waiter);
+          if (list.length) waiters.set(id, list);
+          else waiters.delete(id);
+          resolve(false);
+        }, waitMs);
+        if (typeof timer.unref === "function") timer.unref();
+        waiters.set(id, [...(waiters.get(id) || []), waiter]);
+      });
+    }
     if (!deferred && !busy) currentRun = run();
+    return confirmation;
   }
 
   function kick() {
@@ -235,6 +281,7 @@ export function createRemoteStore({
   log = console,
   retryDelayMs = 5000,
   collectIntervalMs,
+  persistWaitMs,
   env = process.env
 } = {}) {
   let shardConfigs = shards;
@@ -260,6 +307,9 @@ export function createRemoteStore({
     ? createBackend({ ...validCollector, label: validCollector.label || "base collectrice" }, { ...shared, deferred: true })
     : null;
   const intervalMs = collectIntervalMs ?? Number(env.COLLECT_INTERVAL_SECONDS || 60) * 1000;
+  // Temps maximal pendant lequel une action de joueur attend la confirmation de la base avant de répondre
+  // (PERSIST_WAIT_MS, 3 s par défaut ; 0 pour ne pas attendre).
+  const persistWait = persistWaitMs ?? Number(env.PERSIST_WAIT_MS ?? 3000);
 
   const ownerOf = (id) => fnv1a(String(id)) % shardBackends.length;
   let collectTimer = null;
@@ -347,10 +397,13 @@ export function createRemoteStore({
   }
 
   // Une action de joueur : seule sa partie est écrite, dans sa base d'origine.
-  function saveGame(game) {
+  // La promesse renvoyée vaut true quand l'écriture est confirmée par la base (la collectrice, différée
+  // et facultative, n'est pas attendue), false si elle n'a pas abouti à temps. Elle n'est jamais rejetée.
+  function saveGame(game, { waitMs = persistWait } = {}) {
     const json = JSON.stringify(game);
-    shardBackends[ownerOf(game.id)].enqueue(game.id, json);
+    const confirmation = shardBackends[ownerOf(game.id)].enqueue(game.id, json, waitMs);
     if (collectorBackend) collectorBackend.enqueue(game.id, json);
+    return confirmation;
   }
 
   // Une écriture minuscule dans chaque base : une base inactive finirait archivée.
