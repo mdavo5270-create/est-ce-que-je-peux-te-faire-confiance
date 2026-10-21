@@ -80,7 +80,7 @@ npm start
 Les animations sont isolées de la logique du jeu :
 
 - `public/animations.css` : l'illustration animée du Serpent du doute.
-- `public/motion.js` et `public/motion.css` : tout le reste (transitions entre écrans, lancer de dés, retour sur les choix, compteurs et jauges des résultats, classement en direct, détails des parties).
+- `public/motion.js` et `public/motion.css` : tout le reste (transitions entre écrans, dés en vrais cubes 3D, cartes qui s'inclinent au pointeur, réaction du Serpent au choix, compteurs, jauges et confettis sur un bon score, classement en direct, détails des parties).
 
 `motion.js` intercepte l'affectation `app.innerHTML` de `app.js`, compare l'écran d'avant et celui d'après, puis anime uniquement ce qui a changé : un nouvel écran déclenche un fondu croisé et une entrée orchestrée, une simple mise à jour (sélection, nouveau classement) ne rejoue pas les animations d'entrée. `app.js` n'a pas besoin de le connaître, et une erreur dans `motion.js` ne bloque jamais le jeu. L'option système « réduire les animations » est respectée.
 
