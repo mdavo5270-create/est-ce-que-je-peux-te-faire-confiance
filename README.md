@@ -113,16 +113,17 @@ Variables d'environnement à définir sur l'hébergeur :
 
 ### Règles d'emplacement des annonces
 
-Elles sont voulues pour rester dans les règles de Google tout en maximisant les impressions : annonces sur les pages de contenu (guide, hub des dilemmes, pages de dilemme, articles), accueil sous le contenu éditorial, et une seule bannière en bas de page pendant la partie (`game-bottom`). Cette bannière est hors de la zone de jeu (`#app`), non collante, séparée des boutons de réponse par un grand espace et chargée une seule fois par visite. Il n'y en a jamais au milieu d'un écran de jeu, en position fixe ou flottante, sur les pages légales ni sur les erreurs 404. Chaque annonce est chargée une seule fois, différée jusqu'à l'approche de l'écran, jamais rafraîchie, et masquée si Google ne la remplit pas. Ne rien changer à ces principes : un clic accidentel ou une incitation au clic peut faire suspendre le compte.
+Les annonces éditoriales sont placées sur l'accueil (`home-content`), le guide (`guide-bottom`), le catalogue de dilemmes (`hub-top`, `hub-middle`), chaque fiche de dilemme (`dilemma-top`, `dilemma-bottom`) et les articles (`article-top`, `article-middle`, `article-bottom`). Aucune annonce display classique n'apparaît dans l'interface de jeu. C'est le format H5 récompensé du Serpent qui est destiné au jeu, uniquement après approbation du programme. Il n'y a pas d'annonce sur les pages légales ou les erreurs 404. Chaque unité éditoriale est chargée une fois, à l'approche de l'écran, jamais rafraîchie et masquée si Google ne la remplit pas.
 
 ### Activer la publicité
 
-1. Acheter un domaine, le faire pointer vers l'hébergeur et définir `PUBLIC_URL`, `OWNER_NAME` et `CONTACT_EMAIL`.
-2. Ajouter le site dans AdSense et attendre l'approbation. Vérifier que `https://<domaine>/ads.txt` répond (il reste un simple commentaire tant que `clientId` est vide).
-3. Dans AdSense, créer une unité « display responsive » et le message de consentement (Privacy & messaging, certifié TCF) pour l'EEE, le Royaume-Uni et la Suisse.
-4. Renseigner dans `public/ad-config.js` : `clientId` (`ca-pub-…`), `slotId` (et, au choix, `slots` pour suivre chaque position), puis passer `consentConfigured` à `true` seulement quand le message de consentement est publié. `testMode: true` sert aux essais.
+1. Le site est validé dans AdSense. L'identifiant éditeur `ca-pub-1658775159189335` est renseigné; `/ads.txt` génère maintenant la ligne Google correspondante.
+2. Dans AdSense, créer une unité « display responsive », puis renseigner son `slotId` ou un numéro distinct dans `slots` pour chaque emplacement ci-dessus.
+3. Publier un message de consentement dans « Confidentialité et messages ». Après publication, passer `consentConfigured` à `true`. Google demande une CMP certifiée TCF pour les annonces personnalisées dans l'EEE, au Royaume-Uni et en Suisse.
+4. Le Serpent utilise l'Ad Placement API pour les vidéos récompensées. L'accès à AdSense H5 Games Ads est sur demande et doit être approuvé; une fois l'accord obtenu et le consentement publié, passer `h5GamesEnabled` à `true`. Le joueur confirme explicitement le lancement, et l'indice n'est accordé qu'après le callback `adViewed`. En cas de non-diffusion ou d'annonce interrompue, le partage du lien reste une solution de secours. Cette récompense n'ajoute aucun point.
+5. `testMode: true` sert aux essais sur les unités display. Le code n'ajoute aucune dépendance.
 
-L'annonce récompensée du Serpent nécessiterait Google Ad Manager et reste facultative ; le partage du lien ne génère pas de revenu. Le code n'ajoute aucune dépendance. Voir aussi : https://support.google.com/adsense/answer/13554116?hl=fr.
+Google déconseille les annonces de contenu sur les interfaces de jeu et demande de les éloigner des commandes. Les annonces H5 récompensées du Serpent nécessitent l'accès au programme H5 Games Ads; elles ne sont pas disponibles simplement parce que le site est validé. Voir les instructions Google sur [les règles AdSense](https://support.google.com/adsense/answer/23921?hl=fr), [H5 Games Ads](https://support.google.com/adsense/answer/1705831?hl=fr), [l'Ad Placement API](https://developers.google.com/ad-placement/apis/adbreak?hl=fr) et le [consentement des utilisateurs européens](https://support.google.com/adsense/answer/13554116?hl=fr).
 
 ## Contenu
 

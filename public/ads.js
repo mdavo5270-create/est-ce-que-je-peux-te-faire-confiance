@@ -42,6 +42,10 @@
   function loadAdScript() {
     if (!loader) {
       loader = new Promise((resolve, reject) => {
+        // Le serveur garde le tag de vérification AdSense dans le <head>.
+        // Réutilise-le pour ne pas charger adsbygoogle.js une seconde fois.
+        const existing = document.querySelector('script[src^="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?"]');
+        if (existing) { resolve(); return; }
         const script = document.createElement("script");
         script.async = true;
         script.crossOrigin = "anonymous";

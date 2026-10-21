@@ -20,7 +20,7 @@ const adSlots = (html) => (html.match(/class="ad-unit"/g) || []).length;
 
 test("la configuration publicitaire livrée est inerte", () => {
   const config = readFileSync(new URL("../public/ad-config.js", import.meta.url), "utf8");
-  assert.match(config, /clientId:\s*""/);
+  assert.match(config, /clientId:\s*"ca-pub-1658775159189335"/);
   assert.match(config, /slotId:\s*""/);
   assert.match(config, /consentConfigured:\s*false/);
 });
@@ -85,7 +85,7 @@ test("les erreurs 404 sont des pages HTML non indexées", async (t) => {
   assert.match(api.headers.get("content-type"), /json/);
 });
 
-test("l'accueil n'a aucun jeton résiduel et aucune annonce dans la zone de jeu", async (t) => {
+test("l'accueil n'a aucun jeton résiduel et aucune annonce display dans l'interface de jeu", async (t) => {
   const base = await startServer(t);
   const home = await get(base, "/");
   assert.equal(home.status, 200);
@@ -93,9 +93,7 @@ test("l'accueil n'a aucun jeton résiduel et aucune annonce dans la zone de jeu"
   assert.match(home.body, /<main id="app" class="main-content" aria-live="polite"><\/main>/);
   assert.match(home.body, /FAQPage/);
   assert.match(home.body, /rel="canonical"/);
-  assert.match(home.body, /data-ad-slot="game-bottom"/);
-  // la bannière de partie est hors de la zone de jeu, jamais collante
-  assert.ok(home.body.indexOf("game-bottom") > home.body.indexOf("</main>"));
+  assert.ok(!home.body.includes('data-ad-scope="game"'));
   const css = readFileSync(new URL("../public/ad.css", import.meta.url), "utf8");
   assert.ok(!/position:\s*(fixed|sticky)/.test(css));
   const guide = await get(base, "/guide.html");

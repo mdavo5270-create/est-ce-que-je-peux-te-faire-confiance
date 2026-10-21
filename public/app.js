@@ -3,8 +3,8 @@ const app = document.querySelector("#app");
 const leaveButton = document.querySelector("#leave-game");
 const topbarLabel = document.querySelector("#topbar-label");
 const storagePrefix = "trust-game:";
-// Pilote l'affichage du contenu éditorial (accueil) et de l'annonce de résultats, placés hors de #app
-// pour ne pas être détruits par les rafraîchissements de l'écran.
+// Pilote l'affichage du contenu éditorial de l'accueil, placé hors de #app
+// pour ne pas être détruit par les rafraîchissements de l'écran.
 function syncView(){
   const home=!app.children.length||!!app.querySelector(".home-grid");
   document.body.classList.toggle("in-game",!home);
@@ -88,7 +88,10 @@ function serpentVisual(){
   return `<div class="serpent-visual" aria-hidden="true"><svg class="serpent-illustration" viewBox="0 0 96 96" role="presentation"><circle class="serpent-aura" cx="48" cy="48" r="38"/><path class="serpent-body" pathLength="1" d="M19 71C8 59 12 39 27 33c13-5 27 3 27 15 0 10-11 16-19 10-7-5-3-16 5-15 8 1 10 10 6 16-7 10-1 22 11 22 13 0 23-10 21-22-2-12-11-20-20-24-9-4-17-4-23-6"/><path class="serpent-tail" d="M20 71l-7 5 8 1"/><g class="serpent-head"><path class="serpent-face" d="M37 27c0-8 7-14 16-14 8 0 15 5 15 12 0 7-8 11-16 11-8 0-15-3-15-9Z"/><circle class="serpent-eye" cx="57" cy="20" r="2.2"/><circle class="serpent-eye-glint" cx="57.7" cy="19.3" r=".65"/><path class="serpent-tongue" d="M67 27c5 1 8 3 10 5m-4-4 4-4m-4 4 5 2"/></g><path class="serpent-scale" d="M24 48c4-3 8-3 12 0m8 13c4-3 8-3 12 0m11 5c4-3 8-3 12 0"/></svg></div>`;
 }
 function serpentPanel(hint,locked,turn){
-  if(locked)return `<aside class="serpent-hint serpent-locked" aria-label="Indice verrouillé du Serpent du doute">${serpentVisual()}<div class="serpent-copy"><span class="serpent-label">UNE TÂCHE POUR OBTENIR SON AIDE</span><strong class="serpent-title">Le Serpent garde son indice.</strong><p>Il connaît le choix de A pour ce dilemme, mais ne te le dira qu'après une action.</p><button type="button" class="primary-button serpent-task-button" data-action="serpent-task" data-turn="${turn}">Partager le lien et révéler l'indice</button><p class="serpent-task-note">Le lien sera partagé ou copié. Cette tâche fonctionne même sans publicité.</p><p class="serpent-task-error" data-serpent-task-error role="alert"></p></div></aside>`;
+  if(locked){
+    const rewardedEnabled=window.SerpentAds?.enabled===true;
+    return `<aside class="serpent-hint serpent-locked" aria-label="Indice verrouillé du Serpent du doute">${serpentVisual()}<div class="serpent-copy"><span class="serpent-label">UNE TÂCHE POUR OBTENIR SON AIDE</span><strong class="serpent-title">Le Serpent garde son indice.</strong><p>Il connaît le choix de A pour ce dilemme. Tu peux le regarder révéler son indice après une action.</p>${rewardedEnabled?`<button type="button" class="primary-button serpent-task-button" data-action="serpent-rewarded" data-turn="${turn}">Demander une publicité récompensée</button><p class="serpent-task-note">Si une annonce est disponible, regarde-la jusqu'au bout pour obtenir l'indice.</p><button type="button" class="secondary-button serpent-task-button hidden" data-action="serpent-ad-confirm" data-turn="${turn}" data-serpent-ad-confirm>Oui, lancer la publicité</button><button type="button" class="secondary-button serpent-task-button hidden" data-action="serpent-task" data-turn="${turn}" data-serpent-share-fallback>Partager le lien à la place</button>`:`<button type="button" class="primary-button serpent-task-button" data-action="serpent-task" data-turn="${turn}">Partager le lien et révéler l'indice</button><p class="serpent-task-note">La publicité récompensée sera proposée lorsque l'accès H5 Games et le message de consentement seront activés.</p>`}<p class="serpent-task-error" data-serpent-task-error role="alert"></p></div></aside>`;
+  }
   if(!hint)return "";
   return `<aside class="serpent-hint" aria-label="Indice du Serpent du doute">${serpentVisual()}<div class="serpent-copy"><span class="serpent-label">UN INDICE À PRENDRE AVEC DU RECUL</span><strong class="serpent-title">Le Serpent du doute</strong><p>Il murmure que <b>A a choisi…</b></p><span class="serpent-whisper">${esc(hint.said)}</span><p class="serpent-disclaimer">Il dit vrai environ 6 fois sur 10. Il peut aussi mentir. Cet indice ne change pas ton score.</p></div></aside>`;
 }
@@ -334,6 +337,40 @@ async function doSerpentTask(button){
     const errorBox=button.closest(".serpent-hint")?.querySelector("[data-serpent-task-error]");if(errorBox)errorBox.textContent=message;
   }finally{busy=false;app.querySelectorAll("button").forEach(item=>item.disabled=false);}
 }
+async function doSerpentReward(button){
+  const turn=Number(button.dataset.turn),panel=button.closest(".serpent-hint"),errorBox=panel?.querySelector("[data-serpent-task-error]"),confirmButton=panel?.querySelector("[data-serpent-ad-confirm]"),fallbackButton=panel?.querySelector("[data-serpent-share-fallback]");
+  if(!window.SerpentAds?.enabled){if(errorBox)errorBox.textContent="La publicité récompensée n'est pas encore disponible.";return;}
+  setBusy(true);
+  if(errorBox)errorBox.textContent="Recherche d'une publicité disponible…";
+  try{
+    const result=await window.SerpentAds.requestRewarded(turn,()=>{
+      if(errorBox)errorBox.textContent="Une publicité est disponible. Confirme pour la regarder jusqu'au bout.";
+      if(confirmButton){confirmButton.hidden=false;confirmButton.disabled=false;}
+    });
+    if(result.status==="viewed"){
+      const updated=await request("/api/games/"+encodeURIComponent(identity.id)+"/serpent-task",{method:"POST",token:identity.token,body:{turn,task:"rewarded-ad"}});
+      renderGame(updated);
+      return;
+    }
+    if(confirmButton)confirmButton.hidden=true;
+    if(fallbackButton)fallbackButton.hidden=false;
+    if(errorBox)errorBox.textContent=result.status==="dismissed"?"Tu as fermé la publicité avant la fin. Le Serpent garde son indice; tu peux partager le lien à la place.":"Aucune publicité n'a pu être terminée. Réessaie plus tard ou partage le lien à la place.";
+  }catch(error){
+    if(confirmButton)confirmButton.hidden=true;
+    if(fallbackButton)fallbackButton.hidden=false;
+    if(errorBox)errorBox.textContent="La publicité n'a pas pu démarrer. Réessaie ou partage le lien à la place.";
+  }finally{busy=false;app.querySelectorAll("button").forEach(item=>item.disabled=false);}
+}
+function confirmSerpentAd(button){
+  const turn=Number(button.dataset.turn),panel=button.closest(".serpent-hint"),errorBox=panel?.querySelector("[data-serpent-task-error]");
+  if(!window.SerpentAds?.showRewarded(turn)){
+    if(errorBox)errorBox.textContent="Cette publicité n'est plus disponible. Réessaie ou partage le lien à la place.";
+    const fallbackButton=panel?.querySelector("[data-serpent-share-fallback]");if(fallbackButton)fallbackButton.hidden=false;
+    return;
+  }
+  button.hidden=true;
+  if(errorBox)errorBox.textContent="La publicité est en cours. Termine-la pour recevoir l'indice.";
+}
 function setSetupAnswer(action,index,choiceIndex){
   if(!setupState)return;
   if(action==="personal")setupState.personal[index].answerIndex=choiceIndex;
@@ -352,10 +389,12 @@ function handleChange(event){
   app.innerHTML=renderSetup(game);document.querySelector("#setup-form").addEventListener("submit",saveSetup);
 }
 async function handleClick(event){
-  const button=event.target.closest("button[data-action]");if(!button||busy)return;const action=button.dataset.action;
+  const button=event.target.closest("button[data-action]");if(!button)return;const action=button.dataset.action;if(busy&&action!=="serpent-ad-confirm")return;
   if(action==="roll")return doRoll(button);if(action==="select-choice")return selectPending("dilemma",button.dataset.choice);
   if(action==="confirm-selection")return confirmPending();if(action==="cancel-selection")return cancelPending();
   if(action==="serpent-task")return doSerpentTask(button);
+  if(action==="serpent-rewarded")return doSerpentReward(button);
+  if(action==="serpent-ad-confirm")return confirmSerpentAd(button);
   if(action==="copy-invite")return copyInvite();if(action==="load-invite")return loadInvite(button);
   if(action==="select-answer")return selectPending(button.dataset.type,Number(button.dataset.choiceIndex));
   if(action==="set-personal")return setSetupAnswer("personal",Number(button.dataset.index),Number(button.dataset.choiceIndex));

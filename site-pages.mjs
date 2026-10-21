@@ -91,8 +91,8 @@ ${body}
         ${footerLinks()}
       </footer>
     </div>
-    <script src="/ad-config.js?v=3"></script>
-    <script src="/ads.js?v=3" defer></script>${script}
+    <script src="/ad-config.js?v=4"></script>
+    <script src="/ads.js?v=4" defer></script>${script}
   </body>
 </html>
 `;

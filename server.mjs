@@ -648,7 +648,9 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
           if (!stage || stage.type !== "dilemma" || body.turn !== stage.index + 1) {
             throw new HttpError(409, "L'indice se débloque uniquement pour le dilemme en cours.");
           }
-          if (body.task !== "share-invite") throw new HttpError(400, "Partage le lien de la partie pour débloquer l'indice.");
+          if (body.task !== "share-invite" && body.task !== "rewarded-ad") {
+            throw new HttpError(400, "Partage le lien ou termine la publicité récompensée pour débloquer l'indice.");
+          }
           if (!game.serpentHints?.[stage.index]) throw new HttpError(409, "L'indice du Serpent n'est pas disponible pour ce dilemme.");
           if (!Array.isArray(guest.serpentUnlockedTurns)) guest.serpentUnlockedTurns = [];
           if (!guest.serpentUnlockedTurns.includes(body.turn)) guest.serpentUnlockedTurns.push(body.turn);
