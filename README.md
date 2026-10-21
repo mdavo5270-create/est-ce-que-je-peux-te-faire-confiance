@@ -25,6 +25,10 @@ Sur un hébergeur gratuit comme Render, le disque est effacé à chaque redémar
 
 Sans ces deux variables, le serveur continue d'utiliser le fichier local. Si la base est injoignable au démarrage, le serveur s'arrête volontairement plutôt que de repartir à vide et d'écraser les parties enregistrées. La clé utilisée est `confiance:games` (modifiable avec `GAMES_KEY`).
 
+**Bases de secours.** On peut brancher jusqu'à 5 bases : la première avec `UPSTASH_REDIS_REST_URL` et `UPSTASH_REDIS_REST_TOKEN`, les suivantes avec `UPSTASH_REDIS_REST_URL_2` et `UPSTASH_REDIS_REST_TOKEN_2`, puis `_3`, `_4`, `_5`. Chaque sauvegarde est envoyée à toutes les bases en parallèle ; une base en panne ne bloque pas les autres et sera retentée. Au démarrage, le serveur lit toutes les bases, garde la version la plus récente et remet les autres à jour. Il refuse de démarrer si une base est illisible et qu'aucune autre n'a de données, pour ne rien écraser.
+
+**Anti-archivage.** Au démarrage puis toutes les 24 heures, le serveur réécrit l'état dans chaque base : une base gratuite restée inactive finirait archivée.
+
 ## Parcours d'une partie
 
 1. L'hôte choisit son nom. Il n'a pas besoin de prévoir combien d'amis participeront.

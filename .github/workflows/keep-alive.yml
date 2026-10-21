@@ -18,4 +18,4 @@ jobs:
         run: |
           curl -sS -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" \
             --max-time 120 --retry 2 --retry-delay 10 \
-            https://peux-te-faire-confiance.onrender.com/api/health || echo "Ping failed (the next run will retry)"
+            https://est-ce-que-je-peux-te-faire-confiance.onrender.com/api/health || echo "Ping failed (the next run will retry)"

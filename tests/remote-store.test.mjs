@@ -40,7 +40,7 @@ test("première utilisation : aucune partie, puis les parties sauvegardées sont
   store.save(() => JSON.stringify([{ id: "a" }]));
   store.save(() => JSON.stringify([{ id: "a" }, { id: "b" }]));
   await store.flush();
-  assert.deepEqual(JSON.parse(fake.data.get("k")), [{ id: "a" }, { id: "b" }]);
+  assert.deepEqual(JSON.parse(fake.data.get("k")).games, [{ id: "a" }, { id: "b" }]);
   assert.deepEqual(await store.load(), [{ id: "a" }, { id: "b" }]);
 });
 
@@ -54,8 +54,9 @@ test("une sauvegarde qui échoue est retentée", async (t) => {
   const fake = await startFakeUpstash(t, { failures: 2 });
   const store = createRemoteStore({ url: fake.url, token: "secret", key: "k", log: quiet, retryDelayMs: 10 });
   store.save(() => JSON.stringify([{ id: "retry" }]));
-  await store.flush(2000);
-  assert.deepEqual(JSON.parse(fake.data.get("k")), [{ id: "retry" }]);
+  // Les nouvelles tentatives automatiques (toutes les 10 ms ici) finissent par aboutir.
+  for (let waited = 0; !fake.data.has("k") && waited < 2000; waited += 20) await new Promise((done) => setTimeout(done, 20));
+  assert.deepEqual(JSON.parse(fake.data.get("k")).games, [{ id: "retry" }]);
 });
 
 test("une partie créée survit au redémarrage du serveur", async (t) => {
@@ -82,4 +83,59 @@ test("une partie créée survit au redémarrage du serveur", async (t) => {
   assert.equal(again.status, 200);
   const view = await again.json();
   assert.equal(view.role, "A");
+});
+
+test("les bases sont lues depuis les variables d'environnement (jusqu'à 5)", () => {
+  const env = {};
+  for (let slot = 1; slot <= 7; slot += 1) {
+    const suffix = slot === 1 ? "" : "_" + slot;
+    env["UPSTASH_REDIS_REST_URL" + suffix] = "http://x" + slot;
+    env["UPSTASH_REDIS_REST_TOKEN" + suffix] = "t" + slot;
+  }
+  assert.equal(createRemoteStore({ env }).size, 5);
+  assert.equal(createRemoteStore({ env: { UPSTASH_REDIS_REST_URL: "http://x", UPSTASH_REDIS_REST_TOKEN: "t" } }).size, 1);
+  assert.equal(createRemoteStore({ env: { UPSTASH_REDIS_REST_URL_2: "http://x" } }), null);
+});
+
+test("une sauvegarde est envoyée à toutes les bases", async (t) => {
+  const fakes = [await startFakeUpstash(t), await startFakeUpstash(t), await startFakeUpstash(t)];
+  const store = createRemoteStore({ targets: fakes.map((fake) => ({ url: fake.url, token: "secret" })), key: "k", log: quiet });
+  assert.equal(store.size, 3);
+  store.save(() => JSON.stringify([{ id: "x" }]));
+  await store.flush();
+  for (const fake of fakes) assert.deepEqual(JSON.parse(fake.data.get("k")).games, [{ id: "x" }]);
+});
+
+test("au démarrage, la version la plus récente gagne et une base vide ou ancienne n'écrase rien", async (t) => {
+  const [a, b, c] = [await startFakeUpstash(t), await startFakeUpstash(t), await startFakeUpstash(t)];
+  a.data.set("k", JSON.stringify({ v: 2, savedAt: 1000, games: [{ id: "vieux" }] }));
+  b.data.set("k", JSON.stringify({ v: 2, savedAt: 5000, games: [{ id: "recent" }] }));
+  // c est vide (nouvelle base de secours)
+  const store = createRemoteStore({ targets: [a, b, c].map((fake) => ({ url: fake.url, token: "secret" })), key: "k", log: quiet });
+  assert.deepEqual(await store.load(), [{ id: "recent" }]);
+});
+
+test("l'ancien format (simple liste) reste lisible", async (t) => {
+  const fake = await startFakeUpstash(t);
+  fake.data.set("k", JSON.stringify([{ id: "ancien" }]));
+  const store = createRemoteStore({ url: fake.url, token: "secret", key: "k", log: quiet });
+  assert.deepEqual(await store.load(), [{ id: "ancien" }]);
+});
+
+test("une base en panne ne bloque ni la lecture ni l'écriture des autres", async (t) => {
+  const good = await startFakeUpstash(t);
+  good.data.set("k", JSON.stringify({ v: 2, savedAt: 10, games: [{ id: "ok" }] }));
+  const targets = [{ url: "http://127.0.0.1:1", token: "secret" }, { url: good.url, token: "secret" }];
+  const store = createRemoteStore({ targets, key: "k", log: quiet, retryDelayMs: 10 });
+  assert.deepEqual(await store.load({ attempts: 2, delayMs: 1 }), [{ id: "ok" }]);
+  store.save(() => JSON.stringify([{ id: "nouveau" }]));
+  await store.flush(300);
+  assert.deepEqual(JSON.parse(good.data.get("k")).games, [{ id: "nouveau" }]);
+});
+
+test("refus de démarrer à vide si une base est illisible et que les autres n'ont aucune donnée", async (t) => {
+  const empty = await startFakeUpstash(t);
+  const targets = [{ url: "http://127.0.0.1:1", token: "secret" }, { url: empty.url, token: "secret" }];
+  const store = createRemoteStore({ targets, key: "k", log: quiet });
+  await assert.rejects(store.load({ attempts: 1, delayMs: 1 }), /démarrage refusé/);
 });

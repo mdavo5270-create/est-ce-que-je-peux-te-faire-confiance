@@ -512,7 +512,7 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
     saveGamesToFile(map, file);
     if (store) store.save(() => JSON.stringify([...map.values()]));
   };
-  return createServer(async (request, response) => {
+  const server = createServer(async (request, response) => {
     const url = new URL(request.url, "http://localhost");
     const pathname = url.pathname;
     try {
@@ -692,6 +692,9 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
       return sendJson(response, status, { error: error.message || "Une erreur est survenue." });
     }
   });
+  // Réécrit l'état actuel dans toutes les bases (rattrapage au démarrage + « battement de cœur » quotidien).
+  server.persistNow = () => saveGames(games, dataFile);
+  return server;
 }
 
 const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
@@ -703,8 +706,12 @@ if (isMain) {
   if (store) {
     try {
       const initialGames = await store.load();
-      console.log("Stockage distant actif : " + initialGames.length + " partie(s) chargée(s).");
+      console.log("Stockage distant actif : " + initialGames.length + " partie(s) chargée(s), " + store.size + " base(s).");
       server = createGameServer({ dataFile: null, store, initialGames });
+      // Remet toutes les bases à jour (rattrape une base de secours vide ou en retard),
+      // puis une écriture par jour : une base inutilisée finirait archivée par Upstash.
+      server.persistNow();
+      setInterval(() => server.persistNow(), 24 * 60 * 60 * 1000).unref();
     } catch (error) {
       console.error("Impossible de lire le stockage distant, arrêt pour ne pas écraser les parties :", error.message);
       process.exit(1);
