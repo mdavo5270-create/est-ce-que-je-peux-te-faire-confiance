@@ -1,0 +1,276 @@
+/* motion.css — animations pilotées par motion.js (voir ce fichier pour le principe). */
+
+@property --num { syntax: "<integer>"; inherits: false; initial-value: 0; }
+
+:root {
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --ease-spring: cubic-bezier(.2, 1.4, .4, 1);
+  --leaf-strong: #8ba46d;
+}
+
+/* ------------------------------------------------------------------ */
+/* Changement d'écran                                                  */
+/* ------------------------------------------------------------------ */
+
+.main-content { position: relative; }
+
+.is-entering [data-enter] {
+  animation: enter-rise .66s var(--ease-out) calc(90ms + var(--enter-i, 0) * 70ms) backwards;
+}
+
+@keyframes enter-rise {
+  from { opacity: 0; transform: translate3d(0, calc(18px * var(--dir, 1)), 0) scale(.992); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* L'ancien écran s'efface par-dessus pendant que le nouveau monte. */
+.motion-ghost {
+  position: absolute;
+  z-index: 6;
+  overflow: hidden;
+  pointer-events: none;
+  animation: ghost-out .34s cubic-bezier(.4, 0, 1, 1) both;
+}
+
+@keyframes ghost-out {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translate3d(0, calc(-12px * var(--dir, 1)), 0) scale(.996); }
+}
+
+/* Les copies de l'ancien écran sont figées dans leur état final. */
+.motion-ghost *, .motion-ghost *::before, .motion-ghost *::after { animation: none !important; transition: none !important; }
+.motion-ghost .serpent-body { stroke-dashoffset: 0; }
+.motion-ghost .serpent-tail { opacity: .8; }
+.motion-ghost .serpent-scale { opacity: 1; }
+.motion-ghost .serpent-whisper { opacity: 1; transform: none; }
+.motion-ghost .roll-total.is-waiting { opacity: 1; transform: none; }
+
+/* Accueil : les deux cercles de la carte se déploient une fois. */
+.is-entering .intro-card::before { animation: ring-in 1.2s .35s var(--ease-out) backwards; }
+.is-entering .intro-card::after  { animation: ring-in 1.2s .5s var(--ease-out) backwards; }
+
+@keyframes ring-in {
+  from { opacity: 0; transform: scale(.55); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Barres de progression : la nouvelle étape se remplit. */
+.progress-track i.fill-in {
+  background: linear-gradient(var(--leaf-strong), var(--leaf-strong)) left center / 0% 100% no-repeat, #e5e8df;
+  animation: bar-fill .7s var(--ease-out) var(--fill-delay, 420ms) forwards;
+}
+
+@keyframes bar-fill { to { background-size: 100% 100%; } }
+
+/* ------------------------------------------------------------------ */
+/* Dés                                                                 */
+/* ------------------------------------------------------------------ */
+
+.dice-area { perspective: 560px; }
+.die { transform-style: preserve-3d; }
+
+.die.is-tumbling {
+  animation: die-tumble var(--roll-ms, 800ms) var(--roll-delay, 0ms) cubic-bezier(.3, .6, .3, 1) both;
+}
+
+@keyframes die-tumble {
+  0%   { transform: translateY(-38px) rotateX(-240deg) rotateZ(calc(var(--spin, 1) * -28deg)) scale(1.1); }
+  42%  { transform: translateY(5px) rotateX(36deg) rotateZ(calc(var(--spin, 1) * 12deg)) scale(1); }
+  66%  { transform: translateY(-11px) rotateX(-14deg) rotateZ(calc(var(--spin, 1) * -6deg)); }
+  84%  { transform: translateY(1px) rotateX(4deg) rotateZ(calc(var(--spin, 1) * 2deg)); }
+  100% { transform: none; }
+}
+
+.die.is-landed { animation: die-land .42s var(--ease-spring); }
+
+@keyframes die-land {
+  0%   { transform: translateY(0) scale(.93, 1.05); }
+  55%  { transform: translateY(-4px) scale(1.04, .98); }
+  100% { transform: none; }
+}
+
+.is-rolling .plus-sign { opacity: .35; transition: opacity .3s; }
+
+.roll-total.is-waiting { opacity: 0; transform: scale(.5); }
+.roll-total.is-revealed { animation: total-pop .6s var(--ease-spring) backwards; }
+
+@keyframes total-pop {
+  from { opacity: 0; transform: scale(.45); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Attente de la réponse du serveur après « Lancer les dés ». */
+.dice-area.is-shaking .die { animation: die-shake .34s ease-in-out infinite; }
+.dice-area.is-shaking .die:nth-of-type(2) { animation-direction: reverse; animation-delay: -.12s; }
+
+@keyframes die-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  25% { transform: translate(-4px, -7px) rotate(-9deg); }
+  50% { transform: translate(4px, -2px) rotate(8deg); }
+  75% { transform: translate(-3px, -8px) rotate(-5deg); }
+}
+
+/* ------------------------------------------------------------------ */
+/* Sélection et validation                                             */
+/* ------------------------------------------------------------------ */
+
+.just-selected { animation: select-pop .46s var(--ease-spring); }
+
+@keyframes select-pop {
+  0%   { transform: scale(.965); }
+  55%  { transform: scale(1.022); }
+  100% { transform: scale(1); }
+}
+
+.selection-confirmation.sheet-in {
+  transform-origin: top center;
+  animation: sheet-in .42s var(--ease-out) backwards;
+}
+
+@keyframes sheet-in {
+  from { opacity: 0; transform: translateY(-8px) scaleY(.92); }
+  to   { opacity: 1; transform: none; }
+}
+
+.choice-row:has(.selected) .choice-button:not(.selected),
+.guest-options:has(.selected) .guest-option:not(.selected) { opacity: .6; }
+
+.choice-button, .guest-option, .mini-choice { transition: transform .18s var(--ease-out), border-color .18s, background .18s, box-shadow .24s, opacity .24s; }
+.guest-option .option-arrow { transition: transform .22s var(--ease-out), color .2s; }
+.guest-option:hover .option-arrow { transform: translateX(4px); color: #6f8a56; }
+.primary-button svg, .secondary-button svg { transition: transform .22s var(--ease-out); }
+.primary-button:hover:not(:disabled) svg { transform: translateX(3px); }
+
+.primary-button:active:not(:disabled), .secondary-button:active:not(:disabled),
+.choice-button:active, .guest-option:active, .mini-choice:active:not(:disabled) { transform: scale(.972); transition-duration: .08s; }
+
+.confirm-choice-button.is-sealing { background: #2f5a43; animation: seal-press .5s var(--ease-out); }
+.confirm-choice-button.is-sealing svg { animation: lock-snap .5s var(--ease-spring); }
+
+@keyframes seal-press { 0% { transform: scale(1); } 35% { transform: scale(.955); } 100% { transform: scale(1); } }
+@keyframes lock-snap { 0% { transform: translateY(-3px) rotate(-14deg); } 60% { transform: translateY(1px) rotate(4deg); } 100% { transform: none; } }
+
+/* Badges « Priorité » / « Alternative » */
+.selection-badge.just-selected { animation: badge-in .5s var(--ease-spring) backwards; }
+@keyframes badge-in { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+
+/* Le Serpent ne rejoue pas son apparition à chaque clic. */
+.serpent-hint.is-still { animation: none; }
+.serpent-hint.is-still .serpent-body { animation: none; stroke-dashoffset: 0; }
+.serpent-hint.is-still .serpent-tail { animation: none; opacity: .8; }
+.serpent-hint.is-still .serpent-scale { animation: none; opacity: 1; }
+.serpent-hint.is-still .serpent-whisper { animation: none; opacity: 1; transform: none; }
+
+/* ------------------------------------------------------------------ */
+/* Attente en direct (cycle synchronisé : le DOM est re-rendu toutes les 3,5 s) */
+/* ------------------------------------------------------------------ */
+
+.waiting-indicator::before { animation-delay: calc(var(--clock, 0ms) * -1); }
+
+.waiting-icon { position: relative; }
+.waiting-card:has(.waiting-indicator) .waiting-icon::after {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid rgba(102, 128, 81, .38);
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+  animation: icon-ripple 2.8s ease-out infinite;
+  animation-delay: calc(var(--clock, 0ms) * -1);
+}
+
+@keyframes icon-ripple {
+  0%   { opacity: .9; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.7); }
+}
+
+.waiting-indicator.is-updated, .player-row.is-updated { animation: indicator-bump 1.4s var(--ease-out); }
+@keyframes indicator-bump {
+  0%   { background: #dcebc4; transform: scale(1.04); }
+  100% { background: #f0f4e8; transform: none; }
+}
+
+.guest-progress-row.is-updated { animation: row-update 1.5s ease-out; }
+@keyframes row-update { 0% { background: rgba(217, 232, 189, .8); } 100% { background: transparent; } }
+
+.leader-row.is-new, .guest-progress-row.is-new, .match-accordion.is-new { animation: row-flash 2.2s ease-out; }
+@keyframes row-flash {
+  0%, 20% { background: linear-gradient(90deg, rgba(217, 232, 189, .85), rgba(217, 232, 189, 0) 85%); }
+  100%    { background: linear-gradient(90deg, rgba(217, 232, 189, 0), rgba(217, 232, 189, 0) 85%); }
+}
+
+/* ------------------------------------------------------------------ */
+/* Résultats : compteurs, jauges, verdict                              */
+/* ------------------------------------------------------------------ */
+
+/* Le vrai chiffre reste dans le DOM mais invisible ; un compteur CSS le dessine en montant. */
+.metric-value, .match-title h2, .leader-row b, .accordion-score, .score-breakdown b { white-space: nowrap; }
+
+.count {
+  position: relative;
+  display: inline-block;
+  color: transparent;
+  font-variant-numeric: tabular-nums;
+}
+
+.count::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: var(--ink, currentColor);
+  content: counter(num) attr(data-frac);
+  counter-reset: num var(--num);
+  white-space: nowrap;
+  animation: count-to var(--count-dur, 1.1s) cubic-bezier(.16, 1, .3, 1) var(--count-delay, 0ms) both;
+}
+
+@keyframes count-to {
+  from { --num: 0; }
+  to   { --num: var(--to); }
+}
+
+.meter { display: block; grid-column: 1 / -1; height: 4px; margin-top: 9px; overflow: hidden; border-radius: 999px; background: rgba(24, 43, 37, .09); }
+.metric-card .meter { margin-top: 18px; }
+.metric-card.trust .meter { background: rgba(255, 255, 255, .16); }
+.meter i, .score-track i { display: block; height: 100%; border-radius: inherit; background: var(--leaf-strong); transform: scaleX(var(--fill, 0)); transform-origin: left center; }
+.metric-card.trust .meter i { background: #b9d595; }
+.meter i.grow, .score-track i.grow { animation: meter-grow 1.2s var(--ease-out) var(--meter-delay, 0ms) backwards; }
+
+@keyframes meter-grow { from { transform: scaleX(0); } to { transform: scaleX(var(--fill, 0)); } }
+
+.score-track { height: 6px; margin: 16px 0 4px; overflow: hidden; border-radius: 999px; background: #e8ece0; }
+
+.match-title h2 { font-variant-numeric: tabular-nums; }
+.result-tag.pop-in { animation: tag-pop .7s var(--ease-spring) 1.1s backwards; }
+@keyframes tag-pop { from { opacity: 0; transform: translateY(6px) scale(.85); } to { opacity: 1; transform: none; } }
+
+/* Détails des parties */
+.match-accordion > summary { transition: background .2s; }
+.match-accordion > summary:hover { background: #f7f8f2; }
+.match-accordion-content { will-change: height; }
+
+/* ------------------------------------------------------------------ */
+/* Détails d'interface                                                 */
+/* ------------------------------------------------------------------ */
+
+.brand-mark i { transition: transform .35s var(--ease-spring); }
+.brand:hover .brand-mark i:first-child { transform: translateX(-3px); }
+.brand:hover .brand-mark i:last-child { transform: translateX(3px); }
+
+.secondary-button.is-copied { color: #fffefa; border-color: #5f7d49; background: #5f7d49; font-size: 0; }
+.secondary-button.is-copied::after { content: "Lien copié"; font-size: 12px; animation: tag-pop .4s var(--ease-spring) backwards; }
+
+.toast.is-leaving { animation: toast-out .26s ease-in forwards; }
+@keyframes toast-out { to { opacity: 0; transform: translateY(8px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .is-entering [data-enter], .motion-ghost, .die, .roll-total, .just-selected, .sheet-in,
+  .meter i, .score-track i, .count::after, .result-tag.pop-in, .progress-track i.fill-in {
+    animation: none !important;
+  }
+  .roll-total.is-waiting { opacity: 1; transform: none; }
+  .count { color: inherit; }
+  .count::after { content: none; }
+  .waiting-card:has(.waiting-indicator) .waiting-icon::after { animation: none; opacity: 0; }
+  .progress-track i.fill-in { background: var(--leaf-strong); }
+}
