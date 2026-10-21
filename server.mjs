@@ -474,7 +474,14 @@ function publicBaseUrl(request) {
   return safeOrigin(request, { publicUrl: process.env.PUBLIC_URL, port: process.env.PORT || 4173 });
 }
 
+const ADSENSE_VERIFICATION_SCRIPT = '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1658775159189335" crossorigin="anonymous"></script>';
+
 function sendPage(response, { status, type, body, cache }) {
+  // Le vérificateur AdSense doit se trouver dans le <head> de chaque page HTML.
+  // La configuration des annonces reste séparément contrôlée par le consentement dans public/ads.js.
+  if (type.toLowerCase().startsWith("text/html") && !body.includes("ca-pub-1658775159189335")) {
+    body = body.replace("</head>", `    ${ADSENSE_VERIFICATION_SCRIPT}\n  </head>`);
+  }
   const data = Buffer.from(body, "utf8");
   response.writeHead(status, {
     "content-type": type,
