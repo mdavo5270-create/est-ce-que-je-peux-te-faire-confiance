@@ -1,5 +1,6 @@
 
 const app = document.querySelector("#app");
+const gameplayAd = document.querySelector("#game-ad-wrap");
 const leaveButton = document.querySelector("#leave-game");
 const topbarLabel = document.querySelector("#topbar-label");
 const storagePrefix = "trust-game:";
@@ -41,11 +42,12 @@ async function request(path,options={}){
   const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||"Une erreur est survenue. Réessaie dans un instant.");return data;
 }
 function setTopbar(active){leaveButton.classList.toggle("hidden",!active);topbarLabel.textContent=active?"PARTIE PRIVÉE":"UNE PARTIE PRIVÉE";}
+function setGameplayAdVisible(visible){if(gameplayAd)gameplayAd.hidden=!visible;}
 function stopWaiting(){if(waitingTimer)clearInterval(waitingTimer);waitingTimer=null;}
 function toast(message){document.querySelector(".toast")?.remove();const item=document.createElement("div");item.className="toast";item.setAttribute("role","status");item.textContent=message;document.body.append(item);clearTimeout(toastTimer);toastTimer=setTimeout(()=>item.remove(),2800);}
 function setBusy(value){busy=value;app.querySelectorAll("button").forEach(button=>button.disabled=value);}
 function showHome(error=""){
-  stopWaiting();setTopbar(false);
+  stopWaiting();setTopbar(false);setGameplayAdVisible(false);
   app.innerHTML=`
   <section class="home-grid"><div class="home-copy"><p class="eyebrow">Un jeu de choix à plusieurs</p>
   <h1 class="display-title">Est-ce que je peux<br><em>te faire confiance&nbsp;?</em></h1>
@@ -167,6 +169,7 @@ function renderInvite(data){
   ${link}${guests}${data.guestCount>12?`<p class="invite-hint">Cette liste montre les 12 premiers inscrits. Le classement complet apparaît dans l'écran des résultats.</p>`:""}<div class="waiting-indicator">${data.guestCount} ami${data.guestCount===1?"":"s"} inscrit${data.guestCount===1?"":"s"} · ${data.completedGuests} terminé${data.completedGuests===1?"":"s"}</div><p class="invite-hint">Le Serpent donne un indice distinct à chacun des trois dilemmes. Tous les amis reçoivent les mêmes indices; chacun peut dire vrai ou mentir, sans changer le score.</p></div></section>`;
 }
 function renderJoin(){
+  setGameplayAdVisible(false);
   stopWaiting();setTopbar(false);
   app.innerHTML=`<section class="waiting-layout"><div class="waiting-card"><div class="waiting-icon">${icons.lock}</div><p class="eyebrow">Invitation privée</p><h1 class="waiting-title">Tu as été invité à jouer.</h1><p class="waiting-copy">Tu répondras à 3 dilemmes, 3 questions personnelles et 4 situations. L'organisateur verra tes réponses et ton résultat quand tu auras terminé. Les autres invités ne verront pas tes choix.</p>
   <form id="join-form" class="join-form"><label class="form-label" for="join-name">Ton prénom ou un pseudo</label><input class="text-input" id="join-name" name="name" maxlength="32" autocomplete="nickname" placeholder="Par exemple, Sam" value="${esc(savedProfileName())}" required/><p class="error-message" id="join-error" role="alert"></p><button class="primary-button full-width" type="submit">Rejoindre la partie ${icons.arrow}</button><p class="invite-hint">Ton pseudo sera retenu dans ce navigateur. Rouvre ce lien sur cet appareil pour retrouver cette partie.</p></form></div></section>`;
@@ -235,7 +238,7 @@ function filterResults(query){
   app.querySelectorAll(".leaderboard-empty").forEach(item=>{item.hidden=!normalized||details.some(row=>row.dataset.matchName.includes(normalized));});
 }
 function renderGame(data){
-  game=data;setTopbar(true);
+  game=data;setTopbar(true);setGameplayAdVisible(false);
   if(pendingSelection&&pendingSelection.key!==currentSelectionKey(data))pendingSelection=null;
   if(data.readyToReveal){
     if(data.role==="B"){stopWaiting();app.innerHTML=renderGuestCompleted(data);return;}
@@ -244,11 +247,11 @@ function renderGame(data){
     pollWaiting();return;
   }
   resultsSignature=null;
-  if(data.role==="A"&&data.myCompleted<3){stopWaiting();app.innerHTML=renderHostTurn(data);return;}
-  if(data.role==="A"&&!data.setupDone){stopWaiting();app.innerHTML=renderSetup(data);document.querySelector("#setup-form").addEventListener("submit",saveSetup);return;}
+  if(data.role==="A"&&data.myCompleted<3){stopWaiting();setGameplayAdVisible(true);app.innerHTML=renderHostTurn(data);return;}
+  if(data.role==="A"&&!data.setupDone){stopWaiting();setGameplayAdVisible(true);app.innerHTML=renderSetup(data);document.querySelector("#setup-form").addEventListener("submit",saveSetup);return;}
   if(data.role==="A"){app.innerHTML=renderInvite(data);if(!identity.inviteUrl&&data.canInvite)loadInvite(null,true);pollWaiting();return;}
   if(!data.currentPrompt){app.innerHTML=renderGuestCompleted(data);return;}
-  stopWaiting();app.innerHTML=renderGuestStep(data);
+  stopWaiting();setGameplayAdVisible(true);app.innerHTML=renderGuestStep(data);
 }
 function pollWaiting(){stopWaiting();waitingTimer=setInterval(()=>{if(!busy&&identity&&identity.role!=="JOIN")refreshGame(false);},3500);}
 async function refreshGame(showFailure=true){

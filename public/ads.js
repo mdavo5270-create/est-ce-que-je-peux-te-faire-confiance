@@ -81,20 +81,43 @@
     }).catch(() => deactivate(wrap));
   }
 
+  let lazyObserver = null;
+  function observeUnits(root) {
+    if (!root) return;
+    const units = [];
+    if (root.matches?.(".ad-unit[data-ad-slot]")) units.push(root);
+    units.push(...(root.querySelectorAll?.(".ad-unit[data-ad-slot]") || []));
+    units.forEach((unit) => {
+      if (unit.dataset.adObserved) return;
+      unit.dataset.adObserved = "true";
+      unit.closest(".ad-wrap")?.setAttribute("data-ad-active", "");
+      if (lazyObserver) lazyObserver.observe(unit);
+      else mount(unit);
+    });
+  }
+
   function init() {
     startConsent();
-    const units = [...document.querySelectorAll(".ad-unit[data-ad-slot]")];
-    units.forEach((unit) => unit.closest(".ad-wrap")?.setAttribute("data-ad-active", ""));
-    if (!("IntersectionObserver" in window)) { units.forEach(mount); return; }
-    // Chargement différé : l'annonce n'est demandée que lorsqu'elle approche de l'écran.
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        observer.unobserve(entry.target);
-        mount(entry.target);
-      });
-    }, { rootMargin: "300px 0px" });
-    units.forEach((unit) => observer.observe(unit));
+    if ("IntersectionObserver" in window) {
+      // Chargement différé : l'annonce n'est demandée que lorsqu'elle approche de l'écran.
+      lazyObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          lazyObserver.unobserve(entry.target);
+          mount(entry.target);
+        });
+      }, { rootMargin: "300px 0px" });
+    }
+    observeUnits(document);
+
+    // Les questions sont rendues dans une seule page : observe les blocs publicitaires
+    // créés lorsque l'écran de jeu change après une réponse.
+    const appRoot = document.querySelector("#app");
+    if (appRoot) new MutationObserver((records) => {
+      records.forEach((record) => record.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) observeUnits(node);
+      }));
+    }).observe(appRoot, { childList: true, subtree: true });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });

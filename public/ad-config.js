@@ -4,7 +4,7 @@
 // 1. clientId  : identifiant éditeur du compte AdSense (ca-pub-XXXXXXXXXXXXXXXX).
 // 2. slotId    : numéro d'une unité publicitaire « display responsive » (utilisé partout).
 //    Pour suivre chaque position séparément, renseigne `slots` avec un numéro par position :
-//    guide-bottom, home-content, hub-top, hub-middle, dilemma-top, dilemma-bottom,
+//    guide-bottom, home-content, game-play, hub-top, hub-middle, dilemma-top, dilemma-bottom,
 //    article-top, article-middle, article-bottom.
 // 3. consentConfigured : à passer à true UNIQUEMENT après avoir créé et publié le message de
 //    consentement (Privacy & messaging, certifié TCF) dans le compte AdSense. Tant que cette

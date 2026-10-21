@@ -101,7 +101,7 @@ Le serveur publie, en plus du jeu, des pages indexables qui apportent le trafic 
 - `/dilemmes` et `/dilemmes/<id>` : une page par dilemme (110 au total), avec les quatre issues et une interaction facultative.
 - `/articles/...` : trois articles de fond (jeux de confiance, dilemme du prisonnier, animer une soirée).
 - `/a-propos`, `/contact`, `/mentions-legales`, `/confidentialite` : pages exigées par AdSense, sans aucune annonce.
-- `/robots.txt`, `/sitemap.xml` (généré, 121 adresses) et `/ads.txt` (généré depuis `public/ad-config.js`).
+- `/robots.txt`, `/sitemap.xml` (généré, 121 adresses) et `/ads.txt` (généré depuis `public/ad-config.js`, avec `public/ads.txt` comme secours explicite pour l'exploration).
 
 Variables d'environnement à définir sur l'hébergeur :
 
@@ -113,17 +113,17 @@ Variables d'environnement à définir sur l'hébergeur :
 
 ### Règles d'emplacement des annonces
 
-Les annonces éditoriales sont placées sur l'accueil (`home-content`), le guide (`guide-bottom`), le catalogue de dilemmes (`hub-top`, `hub-middle`), chaque fiche de dilemme (`dilemma-top`, `dilemma-bottom`) et les articles (`article-top`, `article-middle`, `article-bottom`). Aucune annonce display classique n'apparaît dans l'interface de jeu. C'est le format H5 récompensé du Serpent qui est destiné au jeu, uniquement après approbation du programme. Il n'y a pas d'annonce sur les pages légales ou les erreurs 404. Chaque unité éditoriale est chargée une fois, à l'approche de l'écran, jamais rafraîchie et masquée si Google ne la remplit pas.
+Les annonces éditoriales sont placées sur l'accueil (`home-content`), le guide (`guide-bottom`), le catalogue de dilemmes (`hub-top`, `hub-middle`), chaque fiche de dilemme (`dilemma-top`, `dilemma-bottom`) et les articles (`article-top`, `article-middle`, `article-bottom`). Une unité distincte `game-play` est réservée aux écrans de jeu : elle reste montée pendant la session, sous le contenu de réponse, avec 170 px d'écart des commandes. Elle ne se recharge donc pas à chaque réponse. Il n'y a pas d'annonce sur les pages légales ou les erreurs 404. Chaque unité est chargée une fois, à l'approche de l'écran, et masquée si Google ne la remplit pas.
 
 ### Activer la publicité
 
 1. Le site est validé dans AdSense. L'identifiant éditeur `ca-pub-1658775159189335` est renseigné; `/ads.txt` génère maintenant la ligne Google correspondante.
-2. Dans AdSense, créer une unité « display responsive », puis renseigner son `slotId` ou un numéro distinct dans `slots` pour chaque emplacement ci-dessus.
+2. Dans AdSense, créer une unité « display responsive », puis renseigner son `slotId` ou un numéro distinct dans `slots` pour chaque emplacement ci-dessus, notamment `game-play`.
 3. Publier un message de consentement dans « Confidentialité et messages ». Après publication, passer `consentConfigured` à `true`. Google demande une CMP certifiée TCF pour les annonces personnalisées dans l'EEE, au Royaume-Uni et en Suisse.
 4. Le Serpent utilise l'Ad Placement API pour les vidéos récompensées. L'accès à AdSense H5 Games Ads est sur demande et doit être approuvé; une fois l'accord obtenu et le consentement publié, passer `h5GamesEnabled` à `true`. Le joueur confirme explicitement le lancement, et l'indice n'est accordé qu'après le callback `adViewed`. En cas de non-diffusion ou d'annonce interrompue, le partage du lien reste une solution de secours. Cette récompense n'ajoute aucun point.
 5. `testMode: true` sert aux essais sur les unités display. Le code n'ajoute aucune dépendance.
 
-Google déconseille les annonces de contenu sur les interfaces de jeu et demande de les éloigner des commandes. Les annonces H5 récompensées du Serpent nécessitent l'accès au programme H5 Games Ads; elles ne sont pas disponibles simplement parce que le site est validé. Voir les instructions Google sur [les règles AdSense](https://support.google.com/adsense/answer/23921?hl=fr), [H5 Games Ads](https://support.google.com/adsense/answer/1705831?hl=fr), [l'Ad Placement API](https://developers.google.com/ad-placement/apis/adbreak?hl=fr) et le [consentement des utilisateurs européens](https://support.google.com/adsense/answer/13554116?hl=fr).
+Google recommande de retirer les annonces de contenu des pages de jeu ou de les éloigner d'au moins 150 px; l'emplacement `game-play` garde 170 px de séparation et reste distinct des boutons. Les annonces H5 récompensées du Serpent nécessitent l'accès au programme H5 Games Ads; elles ne sont pas disponibles simplement parce que le site est validé. Voir les instructions Google sur [les règles AdSense](https://support.google.com/adsense/answer/23921?hl=fr), [les pages de jeux](https://support.google.com/adsense/answer/2768340?hl=fr), [H5 Games Ads](https://support.google.com/adsense/answer/1705831?hl=fr), [l'Ad Placement API](https://developers.google.com/ad-placement/apis/adbreak?hl=fr) et le [consentement des utilisateurs européens](https://support.google.com/adsense/answer/13554116?hl=fr).
 
 ## Contenu
 

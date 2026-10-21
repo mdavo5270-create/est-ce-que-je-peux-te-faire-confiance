@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="/flow.css?v=4" />
     <link rel="stylesheet" href="/animations.css?v=2" />
     <link rel="stylesheet" href="/motion.css?v=1" />
-    <link rel="stylesheet" href="/ad.css?v=4" />
+    <link rel="stylesheet" href="/ad.css?v=5" />
     <link rel="stylesheet" href="/content.css?v=1" />
     {{HOME_JSONLD}}
     <title>Est-ce que je peux te faire confiance ?</title>
@@ -38,6 +38,10 @@
         </button>
       </header>
       <main id="app" class="main-content" aria-live="polite"></main>
+      <aside id="game-ad-wrap" class="ad-wrap game-ad-wrap" data-ad-scope="game-play" aria-label="Publicité" hidden>
+        <p class="ad-label">Annonce</p>
+        <div class="ad-unit" data-ad-slot="game-play"></div>
+      </aside>
       <section class="home-content" aria-labelledby="home-about-title">
         <h2 id="home-about-title">Un jeu pour savoir si on peut se faire confiance</h2>
         <p>« Est-ce que je peux te faire confiance ? » met des amis face à des choix : partager ou tout prendre, deviner les réponses de l'organisateur, décider de ce qu'il ferait dans une situation délicate. À la fin, chacun découvre son score sur 100 et l'organisateur voit le classement du groupe. C'est un jeu, pas un test de personnalité : il raconte une partie, pas une vie.</p>
@@ -59,9 +63,9 @@
       </footer>
     </div>
     <script src="/ad-config.js?v=4"></script>
-    <script src="/ads.js?v=4" defer></script>
+    <script src="/ads.js?v=5" defer></script>
     <script src="/h5-games-ads.js?v=1" defer></script>
     <script type="module" src="/motion.js?v=1"></script>
-    <script type="module" src="/app.js?v=17"></script>
+    <script type="module" src="/app.js?v=18"></script>
   </body>
 </html>

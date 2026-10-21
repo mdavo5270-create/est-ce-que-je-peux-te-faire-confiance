@@ -406,8 +406,10 @@ export function readPublisherId() {
 
 function adsTxt() {
   const publisher = readPublisherId();
-  if (!publisher) return "# ads.txt : aucun identifiant éditeur configuré pour le moment (public/ad-config.js).\n";
-  return `google.com, ${publisher}, DIRECT, f08c47fec0942fa0\n`;
+  if (publisher) return `google.com, ${publisher}, DIRECT, f08c47fec0942fa0\n`;
+  const file = join(projectDir, "public", "ads.txt");
+  if (existsSync(file)) return readFileSync(file, "utf8");
+  return "# ads.txt : aucun identifiant éditeur configuré pour le moment (public/ad-config.js).\n";
 }
 
 function robotsTxt(ctx) {
