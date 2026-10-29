@@ -25,6 +25,12 @@ export const extraArticles = [
       `<h2>Le lien avec le jeu « à deux »</h2>
 <p>Notre jeu emprunte à cette tradition l'idée d'une décision simple, partager ou tout prendre, mais il y ajoute une dimension : l'organisateur prépare ses propres réponses, et chaque ami essaie de deviner ce qu'il aurait fait. On ne mesure donc pas seulement le geste, mais aussi la connaissance de l'autre.</p>
 <p>Pour comprendre la logique qui se cache derrière chaque choix, lisez notre article sur <a href="/articles/dilemme-du-prisonnier-explique">le dilemme du prisonnier</a>. Et pour lancer une partie dès maintenant, rendez-vous sur <a href="/">la page du jeu</a>.</p>`,
+      `<h2>Les variantes qui changent les résultats</h2>
+<p>Les chercheurs ont décliné ce jeu de mille façons. Dans certaines versions, les joueurs peuvent se parler avant de décider : les montants envoyés augmentent souvent, car quelques mots suffisent à créer un début de lien. Dans d'autres, les joueurs se retrouvent plusieurs fois, et la réputation entre en jeu : celui qui a trahi une fois aura du mal à être cru ensuite.</p>
+<p>On a aussi fait varier l'anonymat. Quand la décision est secrète, les gens se permettent plus facilement de garder l'argent. Quand elle est connue du partenaire, voire du groupe, la générosité progresse. Ces écarts rappellent une évidence : nous ne décidons jamais dans le vide, mais toujours sous le regard, réel ou imaginé, des autres.</p>`,
+      `<h2>Les limites de ces expériences</h2>
+<p>Il faut garder un regard critique. Ces expériences se font le plus souvent en laboratoire, avec de petites sommes et des participants souvent étudiants. Rien ne prouve qu'une personne qui envoie beaucoup d'argent dans un jeu fera de même dans une situation réelle, où les enjeux, les émotions et les relations sont tout autres.</p>
+<p>Autre limite : la confiance mesurée est ponctuelle. Dans la vie, elle se construit par touches successives, au fil de promesses tenues ou non. C'est pourquoi un score, dans notre jeu comme dans un laboratoire, doit toujours se lire comme une photo d'un moment, jamais comme un portrait.</p>`,
       `<h2>À retenir</h2>
 <p>Le jeu de la confiance montre qu'une décision de coopération repose sur deux gestes : prendre un risque, puis y répondre. Quand ces deux gestes s'enchaînent bien, tout le monde gagne. Quand l'un des deux manque, la confiance ne s'installe pas. C'est vrai pour un jeu d'argent, et c'est vrai aussi pour une amitié.</p>`
     ]
@@ -48,6 +54,12 @@ export const extraArticles = [
       `<h2>Les limites à connaître</h2>
 <p>Le monde réel est plus bruité qu'un tournoi. Une erreur de communication, un message mal compris, et la stratégie peut s'enfermer dans un cycle de représailles. Des chercheurs ont montré que, quand les erreurs existent, une version un peu plus généreuse, qui pardonne de temps en temps une trahison, obtient de meilleurs résultats.</p>
 <p>Autre limite : ces résultats supposent que les joueurs se retrouvent. Si l'on ne se croise qu'une fois, l'incitation à coopérer est plus faible. C'est pourquoi la confiance s'installe plus facilement dans un groupe d'amis, où l'on sait qu'on se reverra.</p>`,
+      `<h2>Un exemple de partie, tour par tour</h2>
+<p>Imaginons deux joueurs. Le joueur A applique donnant-donnant, le joueur B joue de manière plus calculatrice. Au premier tour, A coopère et B trahit : B gagne gros, A perd. Au deuxième tour, A rend la pareille et trahit. B comprend que la trahison a un coût. Au troisième tour, B coopère pour tenter de renouer, et A, qui rejoue exactement le dernier geste de B, coopère à son tour.</p>
+<p>À partir de là, tant que B coopère, la relation est stable et les deux gagnent régulièrement. Si B retrahit, A réplique une fois et la boucle de sanction recommence. B finit par voir que coopérer rapporte plus que trahir sur la durée : c'est tout l'intérêt de la stratégie.</p>`,
+      `<h2>Des variantes plus généreuses ou plus souples</h2>
+<p>Depuis les tournois d'Axelrod, d'autres stratégies ont été étudiées. La version « généreuse » pardonne de temps en temps une trahison, ce qui évite de s'enfermer dans une spirale de représailles quand un malentendu s'est glissé. Une autre stratégie, parfois appelée « gagner-garder, perdre-changer », conserve son choix quand il a bien rapporté et en change quand il a déçu.</p>
+<p>Aucune n'est parfaite dans tous les contextes. Ce que ces travaux montrent surtout, c'est qu'un bon coopérateur est à la fois clair dans ses réactions et capable de tourner la page.</p>`,
       `<h2>Et dans une amitié ?</h2>
 <p>On ne vit pas ses relations comme un tournoi, mais l'idée est parlante. Commencer par faire confiance, réagir calmement quand on est déçu, pardonner vite et rester prévisible : ces habitudes entretiennent la coopération bien mieux que la méfiance permanente.</p>
 <p>Vous voulez voir comment votre groupe se comporte ? Lancez <a href="/">une partie</a> et comparez les résultats. Si vous cherchez d'autres idées pour jouer ensemble, notre article sur <a href="/articles/jeux-de-confiance-entre-amis">six jeux de confiance</a> propose des variantes sans matériel.</p>`
@@ -74,6 +86,12 @@ export const extraArticles = [
       `<h2>5. Partager, pour de petites choses d'abord</h2>
 <p>Offrir un café, prêter un chargeur, garder une place : ces gestes peuvent sembler anodins, mais ils créent un climat de réciprocité. On n'a pas besoin de compter. Dans un groupe où chacun donne un peu, personne n'a le sentiment de donner pour rien.</p>
 <p>C'est aussi la logique de notre jeu : devant un choix entre partager et tout prendre, chacun révèle un peu de sa manière d'aborder les autres. Pour tester la vôtre avec vos amis, <a href="/">lancez une partie</a>.</p>`,
+      `<h2>Quand la confiance a été abîmée</h2>
+<p>Il arrive qu'une promesse soit rompue ou qu'un secret ait circulé. Réparer demande quatre étapes simples. D'abord reconnaître ce qui s'est passé, sans minimiser. Ensuite expliquer, sans se justifier à l'excès : l'autre veut comprendre, pas juger vos intentions. Puis agir : proposer un geste concret pour que cela ne se reproduise pas. Enfin laisser du temps. La confiance revient rarement en une conversation, plutôt par une série de petits actes cohérents.</p>
+<p>De l'autre côté, essayez de ne pas transformer chaque dispute en procès du passé. Dire « j'ai encore besoin de temps » est plus honnête que de faire semblant que tout va bien.</p>`,
+      `<h2>Les pièges à éviter</h2>
+<p>Trois réflexes minent la confiance. Le premier est de tester les gens, en leur tendant de petits pièges pour voir s'ils tiennent parole. Le deuxième est de tout surveiller, par exemple en vérifiant sans cesse les messages ou les publications des autres. Le troisième est de comparer, en rappelant qui a fait quoi pour qui. Ces habitudes installent une logique de contrôle là où l'on voudrait de la tranquillité.</p>
+<p>À l'inverse, un groupe où l'on accepte de ne pas tout savoir, où l'on se laisse la liberté de ne pas répondre tout de suite, est souvent plus solide, justement parce que personne ne se sent surveillé.</p>`,
       `<h2>Un dernier conseil</h2>
 <p>Ne cherchez pas à tout faire à la fois. Choisissez une habitude, appliquez-la pendant un mois, puis passez à la suivante. La confiance se mesure sur la durée : c'est la régularité qui la fait grandir, bien plus que les grands gestes.</p>`
     ]
@@ -134,6 +152,12 @@ export const extraArticles = [
 <li>Qu'est-ce qui te donne confiance en quelqu'un, très vite ?</li>
 <li>Quelle activité aimerais-tu qu'on fasse ensemble cette année ?</li>
 </ul>`,
+      `<h2>Quelques règles pour que la soirée se passe bien</h2>
+<p>Quand on pose des questions personnelles, la manière compte. Laissez à chacun le droit de passer, sans explication. Évitez de couper la parole et de commenter les réponses avec ironie. Si une réponse touche un sujet sensible, ne creusez que si la personne en a envie. Et alternez les questions légères et les questions plus profondes, pour que le rythme reste agréable.</p>
+<p>Il peut aussi être utile de commencer par vous-même : en répondant le premier, vous montrez que l'exercice est sans danger et vous donnez le ton aux autres.</p>`,
+      `<h2>Trois variantes à essayer</h2>
+<p>La première est le « vrai ou faux » : chacun raconte deux anecdotes vraies et une inventée, et les autres devinent laquelle est fausse. La deuxième est le « tour de table express » : une question, une réponse de dix secondes par personne, puis on passe à la suivante. La troisième est la « question du voisin » : chacun écrit une question sur un papier, on les mélange, et chacun en tire une au hasard pour y répondre. Ces formats fonctionnent aussi bien en voyage, en famille qu'entre collègues.</p>
+<p>Si vous aimez deviner ce que pensent vos amis, essayez aussi nos <a href="/dilemmes">dilemmes à deux</a> : on y découvre vite qui partage et qui joue serré.</p>`,
       `<h2>Comment en faire un jeu</h2>
 <p>Choisissez une personne au centre. Elle répond à voix basse à trois questions, que vous notez sur un papier ou dans votre téléphone. Les autres écrivent ensuite leurs pronostics, puis on compare. Un point par bonne réponse : le gagnant est celui qui connaît le mieux la personne.</p>
 <p>C'est exactement le principe des questions personnelles de notre jeu : l'organisateur choisit trois questions et fixe ses réponses, puis chaque ami essaie de les deviner. Pour le faire sans papier et sans compter les points à la main, <a href="/">lancez une partie</a>. Et si vous préférez varier les plaisirs, nos <a href="/articles/jeux-de-confiance-entre-amis">six jeux de confiance</a> vous donneront d'autres idées.</p>`
@@ -159,6 +183,12 @@ export const extraArticles = [
 <p>Les résultats varient selon les personnes, les cultures et les contextes. Il n'existe pas de « bon » niveau de partage universel, et c'est ce qui rend les discussions autour des choix si riches.</p>`,
       `<h2>Quatrième raison : le plaisir de donner</h2>
 <p>Enfin, donner procure parfois une satisfaction directe. Certaines études en psychologie rapportent que dépenser pour les autres peut améliorer l'humeur de celui qui donne. Ce n'est pas une règle, mais cela rappelle que partager n'est pas seulement un coût : c'est aussi une source de plaisir et de lien.</p>`,
+      `<h2>Ce qui nous pousse à partager moins</h2>
+<p>Le partage n'est pas automatique. Plusieurs facteurs le diminuent : l'anonymat, qui supprime la crainte du regard des autres ; la distance, qui rend la personne en face plus abstraite ; la fatigue ou le stress, qui réduisent notre attention aux autres ; et le sentiment de rareté, quand on a l'impression de ne pas avoir assez pour soi. À l'inverse, savoir à qui l'on donne, connaître son histoire et voir l'effet de son geste facilitent la générosité.</p>
+<p>Ces constats sont des tendances, pas des lois : chacun y réagit à sa manière, et deux personnes dans la même situation peuvent choisir très différemment.</p>`,
+      `<h2>Encourager le partage sans pression</h2>
+<p>Dans un groupe, on peut favoriser le partage sans forcer personne. Le plus efficace est de donner l'exemple, de remercier simplement quand quelqu'un partage, et d'éviter de comparer les contributions. Rendre les règles claires aide aussi : on partage plus volontiers quand on sait ce que les autres attendent et ce que l'on peut raisonnablement donner.</p>
+<p>La pression, elle, produit souvent l'effet inverse : un geste forcé ne crée ni lien ni plaisir, et il laisse parfois de la rancœur.</p>`,
       `<h2>Et quand on choisit de tout prendre ?</h2>
 <p>Choisir de garder pour soi n'est pas forcément égoïste. Cela peut venir d'un vrai besoin, d'une méfiance fondée, ou simplement du goût du jeu. Dans nos <a href="/dilemmes">dilemmes</a>, la situation est présentée avec ses enjeux pour que chacun puisse expliquer son choix. Et un score bas dans une partie ne dit rien de la vie réelle : c'est un jeu, pas un jugement.</p>
 <p>Pour explorer votre propre façon de décider, <a href="/">lancez une partie</a> avec vos amis. Pour comprendre la logique stratégique qui sous-tend ces choix, lisez aussi <a href="/articles/dilemme-du-prisonnier-explique">le dilemme du prisonnier expliqué</a>.</p>`
@@ -184,6 +214,12 @@ export const extraArticles = [
 <p>Ce scénario a été proposé par le philosophe Robert Nozick. Une machine peut vous faire vivre n'importe quelle vie heureuse, tout en vous donnant l'impression qu'elle est réelle. Vous y brancheriez-vous pour toujours ? Beaucoup de gens refusent, ce qui suggère qu'ils tiennent à autre chose qu'au seul plaisir : agir réellement, avoir de vrais liens, vivre des choses vraies.</p>`,
       `<h2>5. Le dilemme du prisonnier</h2>
 <p>Deux complices, interrogés séparément, peuvent se dénoncer ou se taire. Si les deux se taisent, la peine est légère. Si l'un dénonce et l'autre se tait, le premier est libéré et le second écope d'une lourde peine. Si les deux dénoncent, ils sont tous deux sanctionnés. Ce dilemme, plus stratégique que moral, est au cœur de notre jeu. Nous l'expliquons en détail dans <a href="/articles/dilemme-du-prisonnier-explique">cet article</a>.</p>`,
+      `<h2>Ce que ces dilemmes ne disent pas</h2>
+<p>Ces scénarios sont volontairement extrêmes, et c'est leur force comme leur faiblesse. Ils isolent un principe, mais la vie réelle est faite de nuances : on ne choisit presque jamais avec une information parfaite, ni sans conséquences à long terme. Il faut aussi distinguer ce que l'on dit que l'on ferait de ce que l'on ferait vraiment sous pression.</p>
+<p>Plusieurs travaux de psychologie suggèrent que nos réponses à ces dilemmes dépendent beaucoup de la formulation : changer quelques mots peut faire basculer une majorité. Cela invite à l'humilité : il s'agit d'un exercice de réflexion, pas d'un test de moralité.</p>`,
+      `<h2>Un dilemme du quotidien à tester ce soir</h2>
+<p>Vous apprenez que le meilleur ami d'un de vos proches lui cache quelque chose d'important, une information qui pourrait le blesser. Vous le dites au risque de créer un conflit, ou vous vous taisez au risque de laisser mentir ? Et si c'était l'inverse, vous voudriez qu'on vous prévienne ? Ce type de situation, sans tramway ni naufrage, fait souvent émerger des discussions bien plus vives, car chacun peut y reconnaître quelque chose de vécu.</p>
+`,
       `<h2>Comment en discuter sans se disputer</h2>
 <p>Pour que la conversation reste agréable, rappelez qu'il n'y a pas de mauvaise réponse et que chacun peut changer d'avis. Demandez « qu'est-ce qui t'a fait choisir cela ? » plutôt que « comment peux-tu penser ça ? ». Et laissez ceux qui ne veulent pas répondre passer leur tour. Notre guide pour <a href="/articles/animer-une-soiree-dilemmes">animer une soirée dilemmes</a> détaille ces conseils.</p>
 <p>Envie de passer de la théorie à la pratique ? Parcourez nos <a href="/dilemmes">dilemmes à deux</a>, ou <a href="/">lancez une partie</a> avec vos amis.</p>`
