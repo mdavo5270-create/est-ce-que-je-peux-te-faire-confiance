@@ -66,27 +66,59 @@
 /* Dés                                                                 */
 /* ------------------------------------------------------------------ */
 
-.dice-area { perspective: 560px; }
-.die { transform-style: preserve-3d; }
+.dice-area { perspective: 720px; perspective-origin: 50% 30%; min-height: 140px; }
 
-.die.is-tumbling {
-  animation: die-tumble var(--roll-ms, 800ms) var(--roll-delay, 0ms) cubic-bezier(.3, .6, .3, 1) both;
+/* Vrai cube : six faces posées dans l'espace (1 devant, 6 derrière, 2 droite, 5 gauche, 3 dessus, 4 dessous). */
+.die.has-cube {
+  position: relative;
+  display: block;
+  width: 70px;
+  height: 70px;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  animation: none;
+  transform-style: preserve-3d;
 }
 
-@keyframes die-tumble {
-  0%   { transform: translateY(-38px) rotateX(-240deg) rotateZ(calc(var(--spin, 1) * -28deg)) scale(1.1); }
-  42%  { transform: translateY(5px) rotateX(36deg) rotateZ(calc(var(--spin, 1) * 12deg)) scale(1); }
-  66%  { transform: translateY(-11px) rotateX(-14deg) rotateZ(calc(var(--spin, 1) * -6deg)); }
-  84%  { transform: translateY(1px) rotateX(4deg) rotateZ(calc(var(--spin, 1) * 2deg)); }
-  100% { transform: none; }
+.die.has-cube > .pip { display: none; }
+
+.cube { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+
+.face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  gap: 4px;
+  padding: 13px;
+  border: 1px solid #d9ddcf;
+  border-radius: 15px;
+  background: #fbfaf5;
+  backface-visibility: hidden;
 }
 
-.die.is-landed { animation: die-land .42s var(--ease-spring); }
+.face .pip { width: 10px; height: 10px; background: #4f6742; box-shadow: inset 0 -1px 2px rgba(0, 0, 0, .25); }
 
-@keyframes die-land {
-  0%   { transform: translateY(0) scale(.93, 1.05); }
-  55%  { transform: translateY(-4px) scale(1.04, .98); }
-  100% { transform: none; }
+.face-1 { transform: translateZ(35px); }
+.face-6 { transform: rotateY(180deg) translateZ(35px); background: #e9ecdf; }
+.face-2 { transform: rotateY(90deg) translateZ(35px); background: #eff1e6; }
+.face-5 { transform: rotateY(-90deg) translateZ(35px); background: #e4e8da; }
+.face-3 { transform: rotateX(90deg) translateZ(35px); background: #fffefa; }
+.face-4 { transform: rotateX(-90deg) translateZ(35px); background: #dfe3d3; }
+
+.cube-shadow {
+  position: absolute;
+  right: 6px;
+  bottom: -22px;
+  left: 6px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(24, 43, 37, .55), rgba(24, 43, 37, 0) 70%);
+  opacity: .3;
+  pointer-events: none;
 }
 
 .is-rolling .plus-sign { opacity: .35; transition: opacity .3s; }
@@ -250,6 +282,16 @@
 .match-accordion-content { will-change: height; }
 
 /* ------------------------------------------------------------------ */
+/* Inclinaison 3D au pointeur, confettis                               */
+/* ------------------------------------------------------------------ */
+
+[data-tilt] { transition: transform .7s var(--ease-out), box-shadow .7s var(--ease-out); }
+[data-tilt].is-tilting { transition: transform .12s linear, box-shadow .12s linear; will-change: transform; }
+.serpent-visual[data-tilt] { transform-style: preserve-3d; }
+
+.confetti-layer { position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; pointer-events: none; }
+
+/* ------------------------------------------------------------------ */
 /* Détails d'interface                                                 */
 /* ------------------------------------------------------------------ */
 
@@ -264,11 +306,13 @@
 @keyframes toast-out { to { opacity: 0; transform: translateY(8px); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .is-entering [data-enter], .motion-ghost, .die, .roll-total, .just-selected, .sheet-in,
+  .is-entering [data-enter], .motion-ghost, .roll-total, .just-selected, .sheet-in,
   .meter i, .score-track i, .count::after, .result-tag.pop-in, .progress-track i.fill-in {
     animation: none !important;
   }
   .roll-total.is-waiting { opacity: 1; transform: none; }
+  [data-tilt] { transition: none; transform: none !important; }
+  .confetti-layer { display: none; }
   .count { color: inherit; }
   .count::after { content: none; }
   .waiting-card:has(.waiting-indicator) .waiting-icon::after { animation: none; opacity: 0; }

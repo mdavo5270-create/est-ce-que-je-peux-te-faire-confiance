@@ -149,6 +149,8 @@
     const sig = sigOf();
     const first = !before.sig;
     const changed = sig !== before.sig;
+    app.querySelectorAll(".die").forEach(buildCube);
+    app.querySelectorAll(TILT_SELECTOR).forEach((el) => el.setAttribute("data-tilt", ""));
     if (changed) enterScreen(before, old, first);
     else stayOnScreen(before);
     decorate(app, { animate: changed });
@@ -230,6 +232,9 @@
     if (area && area.querySelector(".roll-total")) runDice(area);
     const tag = app.querySelector(".match-title .result-tag");
     if (tag) tag.classList.add("pop-in");
+    const score = app.querySelector(".match-title h2");
+    const points = score ? num(score.textContent) : null;
+    if (points != null && points >= 70) setTimeout(() => confetti(score, points), 1700);
   }
 
   function progressFill(before) {
@@ -242,87 +247,115 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* 3. Dés : secousse pendant l'attente, puis lancer et atterrissage    */
+  /* 3. Dés : vrais cubes 3D, lancer avec rebonds, ombre portée          */
   /* ------------------------------------------------------------------ */
 
   const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  // Rotation [x, y] qui amène chaque face devant le joueur (1 face, 2 droite, 3 dessus, 4 dessous, 5 gauche, 6 dos).
+  const FACE_TURN = { 1: [0, 0], 2: [0, -90], 3: [-90, 0], 4: [90, 0], 5: [0, 90], 6: [0, 180] };
 
-  function setFace(die, value) {
-    const on = PIPS[value] || PIPS[1];
-    die.querySelectorAll(".pip").forEach((pip, i) => pip.classList.toggle("on", on.includes(i)));
-    die.dataset.face = String(value);
+  // Les listes de fonctions CSS doivent rester identiques pour que le navigateur interpole fonction par fonction.
+  const cubeTransform = (value, extraX = 0, extraY = 0, extraZ = 0) => {
+    const [x, y] = FACE_TURN[value] || FACE_TURN[1];
+    return "rotateX(-18deg) rotateY(-26deg) rotateX(" + (x + extraX) + "deg) rotateY(" + (y + extraY) + "deg) rotateZ(" + extraZ + "deg)";
+  };
+
+  function buildCube(die) {
+    const existing = die.querySelector(":scope > .cube");
+    if (existing) return existing;
+    const value = num(die.getAttribute("aria-label")) || 1;
+    const cube = document.createElement("div");
+    cube.className = "cube";
+    cube.setAttribute("aria-hidden", "true");
+    for (let face = 1; face <= 6; face += 1) {
+      const side = document.createElement("div");
+      side.className = "face face-" + face;
+      for (let i = 0; i < 9; i += 1) {
+        const pip = document.createElement("i");
+        pip.className = "pip" + (PIPS[face].includes(i) ? " on" : "");
+        side.append(pip);
+      }
+      cube.append(side);
+    }
+    cube.style.transform = cubeTransform(value);
+    cube.dataset.value = String(value);
+    const shadow = document.createElement("span");
+    shadow.className = "cube-shadow";
+    shadow.setAttribute("aria-hidden", "true");
+    die.classList.add("has-cube");
+    die.append(cube, shadow);
+    return cube;
   }
 
-  function randomFace(except) {
-    let value = 1 + Math.floor(Math.random() * 6);
-    if (value === except) value = (value % 6) + 1;
-    return value;
-  }
+  const FALL = "cubic-bezier(.5,0,.9,.6)";
+  const RISE = "cubic-bezier(.1,.5,.4,1)";
 
   function runDice(area) {
     const dice = Array.from(area.querySelectorAll(".die"));
     if (!dice.length) return;
     const total = area.querySelector(".roll-total");
     const fast = /commun/i.test(area.closest(".game-card")?.querySelector(".dice-header span")?.textContent || "");
-    const startDelay = 300;
-    const finals = dice.map((die) => num(die.getAttribute("aria-label")) || 1);
-    const landAt = dice.map((_, i) => startDelay + (fast ? 520 : 780) + i * (fast ? 150 : 260));
-    const landed = dice.map(() => false);
-    const lastSwap = dice.map(() => 0);
-    const t0 = performance.now();
-    let done = false;
+    const startDelay = 280;
 
     area.classList.add("is-rolling");
     if (total) total.classList.add("is-waiting");
+
     dice.forEach((die, i) => {
-      setFace(die, randomFace(finals[i]));
-      die.style.setProperty("--spin", i % 2 ? "-1" : "1");
-      die.style.setProperty("--roll-ms", landAt[i] - startDelay + "ms");
-      die.style.setProperty("--roll-delay", startDelay + "ms");
-      die.classList.add("is-tumbling");
+      const cube = buildCube(die);
+      const value = num(die.getAttribute("aria-label")) || 1;
+      const shadow = die.querySelector(":scope > .cube-shadow");
+      const duration = (fast ? 1000 : 1350) + i * (fast ? 180 : 300);
+      const sign = i % 2 ? -1 : 1;
+      cube.animate(
+        [
+          { transform: cubeTransform(value, sign * 720, -sign * 1080, sign * 300) },
+          { transform: cubeTransform(value) }
+        ],
+        { duration, delay: startDelay, easing: "cubic-bezier(.12,.7,.2,1)", fill: "backwards" }
+      );
+      die.animate(
+        [
+          { transform: "translateY(-120px) scale(1.16)", easing: FALL, offset: 0 },
+          { transform: "translateY(0) scale(1)", easing: RISE, offset: 0.34 },
+          { transform: "translateY(-34px)", easing: FALL, offset: 0.52 },
+          { transform: "translateY(0)", easing: RISE, offset: 0.68 },
+          { transform: "translateY(-9px)", easing: FALL, offset: 0.8 },
+          { transform: "translateY(0)", offset: 0.9 },
+          { transform: "translateY(0)", offset: 1 }
+        ],
+        { duration, delay: startDelay, fill: "backwards" }
+      );
+      if (shadow) {
+        shadow.animate(
+          [
+            { transform: "scale(.4)", opacity: 0.08, offset: 0 },
+            { transform: "scale(1.08)", opacity: 0.34, offset: 0.34 },
+            { transform: "scale(.72)", opacity: 0.18, offset: 0.52 },
+            { transform: "scale(1.02)", opacity: 0.32, offset: 0.68 },
+            { transform: "scale(.9)", opacity: 0.26, offset: 0.8 },
+            { transform: "scale(1)", opacity: 0.3, offset: 0.9 },
+            { transform: "scale(1)", opacity: 0.3, offset: 1 }
+          ],
+          { duration, delay: startDelay, fill: "backwards" }
+        );
+      }
     });
 
+    let done = false;
     function finish() {
       if (done) return;
       done = true;
-      dice.forEach((die, i) => {
-        setFace(die, finals[i]);
-        die.classList.remove("is-tumbling");
-        if (!landed[i]) die.classList.add("is-landed");
-      });
       area.classList.remove("is-rolling");
       if (total) {
         total.classList.remove("is-waiting");
         total.classList.add("is-revealed");
       }
     }
-
-    function frame(now) {
-      if (done || !area.isConnected) return;
-      const t = now - t0;
-      dice.forEach((die, i) => {
-        if (landed[i]) return;
-        if (t >= landAt[i]) {
-          landed[i] = true;
-          setFace(die, finals[i]);
-          die.classList.remove("is-tumbling");
-          die.classList.add("is-landed");
-          return;
-        }
-        if (now - lastSwap[i] > 80) {
-          lastSwap[i] = now;
-          setFace(die, randomFace(Number(die.dataset.face)));
-        }
-      });
-      if (landed.every(Boolean)) finish();
-      else requestAnimationFrame(frame);
-    }
-
-    requestAnimationFrame(frame);
-    setTimeout(finish, landAt[landAt.length - 1] + 500); // filet de sécurité (onglet en arrière-plan)
+    const longest = startDelay + (fast ? 1000 : 1350) + (dice.length - 1) * (fast ? 180 : 300);
+    setTimeout(finish, longest + 60);
   }
 
-  // Pendant que le serveur répond, les dés de l'écran « Lancer les dés » s'agitent.
+  // Pendant que le serveur répond, les dés tournent dans le gobelet.
   document.addEventListener(
     "click",
     (event) => {
@@ -330,14 +363,17 @@
       if (!button || reduced()) return;
       const area = button.closest(".game-card")?.querySelector(".dice-area");
       if (!area || area.dataset.shaking) return;
-      const dice = Array.from(area.querySelectorAll(".die"));
       area.dataset.shaking = "1";
       area.classList.add("is-shaking");
-      const timer = setInterval(() => {
-        if (!area.isConnected) return clearInterval(timer);
-        dice.forEach((die) => setFace(die, randomFace(Number(die.dataset.face))));
-      }, 85);
-      setTimeout(() => clearInterval(timer), 8000);
+      area.querySelectorAll(".die").forEach((die, i) => {
+        const cube = buildCube(die);
+        const value = num(die.getAttribute("aria-label")) || 1;
+        const sign = i % 2 ? -1 : 1;
+        cube.animate(
+          [{ transform: cubeTransform(value) }, { transform: cubeTransform(value, sign * 360, -sign * 540, sign * 180) }],
+          { duration: 620, iterations: Infinity, easing: "linear" }
+        );
+      });
     },
     true
   );
@@ -360,7 +396,10 @@
     if (reduced()) return;
     const pop = (el) => el && el.classList.add("just-selected");
     app.querySelectorAll(".choice-row > .selected").forEach((el) => {
-      if (!before.selection.has("choice:" + indexIn(el))) pop(el);
+      if (!before.selection.has("choice:" + indexIn(el))) {
+        pop(el);
+        reactSerpent(el.dataset.choice);
+      }
     });
     app.querySelectorAll(".guest-options > .selected").forEach((el) => {
       if (!before.selection.has("answer:" + indexIn(el))) pop(el);
@@ -404,7 +443,11 @@
         slideIn(el, delay);
         flash(el, "is-new", 2400);
         const score = el.querySelector("b");
-        if (score) wrapCount(score, delay + 250, 900);
+        if (score) {
+          const points = num(score.textContent);
+          wrapCount(score, delay + 250, 900);
+          if (points >= 80) setTimeout(() => confetti(el, points), delay + 700);
+        }
         return;
       }
       const dy = prevTop - el.getBoundingClientRect().top;
@@ -590,7 +633,141 @@
   );
 
   /* ------------------------------------------------------------------ */
-  /* 7. Petits retours d'action                                          */
+  /* 7. Cartes qui s'inclinent en 3D avec le pointeur                    */
+  /* ------------------------------------------------------------------ */
+
+  const TILT_SELECTOR = ".intro-card,.metric-card,.waiting-card,.serpent-visual";
+  let tiltEl = null;
+
+  function resetTilt(el) {
+    if (!el) return;
+    el.classList.remove("is-tilting");
+    el.style.transform = "";
+    el.style.boxShadow = "";
+  }
+
+  document.addEventListener("pointermove", (event) => {
+    if (event.pointerType === "touch" || reduced()) return;
+    const el = event.target.closest ? event.target.closest(TILT_SELECTOR) : null;
+    if (tiltEl && tiltEl !== el) resetTilt(tiltEl);
+    tiltEl = el;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width - 0.5;
+    const py = (event.clientY - rect.top) / rect.height - 0.5;
+    const max = el.matches(".serpent-visual") ? 18 : 6;
+    el.classList.add("is-tilting");
+    el.style.transform = "perspective(900px) rotateX(" + (-py * max).toFixed(2) + "deg) rotateY(" + (px * max).toFixed(2) + "deg) translateZ(0)";
+    if (!el.matches(".serpent-visual")) el.style.boxShadow = (-px * 26).toFixed(1) + "px " + (py * -22 + 22).toFixed(1) + "px 46px rgba(24,43,37,.14)";
+  });
+
+  document.addEventListener("pointerleave", () => { resetTilt(tiltEl); tiltEl = null; }, true);
+  document.documentElement.addEventListener("mouseleave", () => { resetTilt(tiltEl); tiltEl = null; });
+
+  /* ------------------------------------------------------------------ */
+  /* 8. Le Serpent réagit au choix, confettis sur un bon score           */
+  /* ------------------------------------------------------------------ */
+
+  function reactSerpent(choice) {
+    if (reduced()) return;
+    const head = app.querySelector(".serpent-head");
+    if (!head) return;
+    const dir = choice === "VOLER" ? 1 : -1;
+    head.animate(
+      [
+        { transform: "rotate(0deg) translateY(0)" },
+        { transform: "rotate(" + dir * 15 + "deg) translateY(-3px)", offset: 0.35 },
+        { transform: "rotate(" + dir * -6 + "deg) translateY(0)", offset: 0.7 },
+        { transform: "rotate(0deg) translateY(0)" }
+      ],
+      { duration: 640, easing: "ease-out", composite: "add" }
+    );
+    const tongue = app.querySelector(".serpent-tongue");
+    if (tongue) {
+      tongue.animate(
+        [{ transform: "scaleX(1)" }, { transform: "scaleX(1.5)", offset: 0.4 }, { transform: "scaleX(1)" }],
+        { duration: 520, easing: "ease-out", composite: "add" }
+      );
+    }
+  }
+
+  const CONFETTI_COLORS = ["#8ba46d", "#d9e8bd", "#e57c53", "#20372d", "#f2c14e", "#b9d595"];
+
+  function confetti(anchor, points = 70) {
+    if (reduced() || !anchor || !anchor.isConnected) return;
+    document.querySelectorAll(".confetti-layer").forEach((el) => el.remove());
+    const canvas = document.createElement("canvas");
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    canvas.className = "confetti-layer";
+    canvas.setAttribute("aria-hidden", "true");
+    canvas.width = width * ratio;
+    canvas.height = height * ratio;
+    document.body.append(canvas);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return canvas.remove();
+    ctx.scale(ratio, ratio);
+
+    const box = anchor.getBoundingClientRect();
+    const originX = Math.max(0, Math.min(width, box.left + box.width / 2));
+    const originY = Math.max(0, Math.min(height, box.top + box.height / 2));
+    const count = Math.round(70 + Math.max(0, points - 70) * 2.2);
+    const pieces = Array.from({ length: count }, () => {
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.95;
+      const speed = 380 + Math.random() * 520;
+      return {
+        x: originX, y: originY,
+        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        size: 6 + Math.random() * 7, round: Math.random() < 0.25,
+        spin: (Math.random() - 0.5) * 14, rot: Math.random() * Math.PI * 2,
+        flip: Math.random() * Math.PI * 2, flipSpeed: 6 + Math.random() * 8,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        life: 2.4 + Math.random() * 1.2
+      };
+    });
+
+    let last = performance.now();
+    let age = 0;
+    function frame(now) {
+      if (!canvas.isConnected) return;
+      const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
+      last = now;
+      age += dt;
+      ctx.clearRect(0, 0, width, height);
+      let alive = 0;
+      for (const p of pieces) {
+        if (age > p.life) continue;
+        alive += 1;
+        p.vy += 900 * dt;
+        p.vx *= 1 - 1.6 * dt;
+        p.vy *= 1 - 0.9 * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.rot += p.spin * dt;
+        p.flip += p.flipSpeed * dt;
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, (p.life - age) * 1.6);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.scale(1, Math.cos(p.flip)); // la pièce se retourne : effet 3D
+        ctx.fillStyle = p.color;
+        if (p.round) {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+        ctx.restore();
+      }
+      if (alive) requestAnimationFrame(frame);
+      else canvas.remove();
+    }
+    requestAnimationFrame(frame);
+    setTimeout(() => canvas.remove(), 5000);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 9. Petits retours d'action                                          */
   /* ------------------------------------------------------------------ */
 
   document.addEventListener(
