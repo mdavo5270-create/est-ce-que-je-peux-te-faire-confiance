@@ -1,3 +1,5 @@
+import { extraArticles } from "./site-articles-extra.mjs";
+
 // Contenu éditorial du site : FAQ de l'accueil et articles de fond.
 // Textes originaux, sans interpolation : chaque entrée de `sections` est un bloc HTML.
 
@@ -28,7 +30,7 @@ export const homeFaq = [
   }
 ];
 
-export const articles = [
+const baseArticles = [
   {
     slug: "jeux-de-confiance-entre-amis",
     title: "6 jeux de confiance à faire entre amis, sans matériel",
@@ -121,5 +123,7 @@ export const articles = [
     ]
   }
 ];
+
+export const articles = [...baseArticles, ...extraArticles];
 
 export const articleBySlug = new Map(articles.map((item) => [item.slug, item]));
