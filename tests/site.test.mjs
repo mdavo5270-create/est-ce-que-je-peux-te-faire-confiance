@@ -175,7 +175,7 @@ test("les emplacements partenaires n'existent que sur les pages de dilemmes et d
   const robots = await get(base, "/robots.txt");
   assert.match(robots.body, /Disallow: \/partner-frame/);
   const config = readFileSync(new URL("../public/ad-config.js", import.meta.url), "utf8");
-  assert.match(config, /partnerBanners:\s*\{\s*enabled:\s*true\s*\}/);
+  assert.match(config, /partnerBanners:\s*\{\s*enabled:\s*false\s*\}/);
   assert.match(config, /consentConfigured:\s*false/);
 });
 
