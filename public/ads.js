@@ -110,7 +110,7 @@
     frame.dataset.partnerFrame = native ? "auto" : "fixed";
     frame.setAttribute("scrolling", "no");
     // Pas de allow-same-origin ni de redirection de la page : le code du partenaire ne peut rien lire du site.
-    frame.setAttribute("sandbox", "allow-scripts");
+    frame.setAttribute("sandbox", "allow-scripts allow-popups allow-popups-to-escape-sandbox");
     frame.style.cssText = "display:block;margin:0 auto;border:0;max-width:" + (native ? "728px;width:100%" : "100%");
     frame.addEventListener("error", () => deactivate(wrap));
     slot.replaceChildren(frame);
