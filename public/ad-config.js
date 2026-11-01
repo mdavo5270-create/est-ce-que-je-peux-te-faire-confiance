@@ -19,7 +19,7 @@ window.GAME_ADS = {
   clientId: "ca-pub-1658775159189335",
   slotId: "",
   slots: {},
-  consentConfigured: false,
+  consentConfigured: true,
   h5GamesEnabled: false,
   testMode: false,
   partnerBanners: { enabled: true }

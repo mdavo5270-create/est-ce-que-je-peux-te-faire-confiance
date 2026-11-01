@@ -22,7 +22,7 @@ test("la configuration publicitaire livrée est inerte", () => {
   const config = readFileSync(new URL("../public/ad-config.js", import.meta.url), "utf8");
   assert.match(config, /clientId:\s*"ca-pub-1658775159189335"/);
   assert.match(config, /slotId:\s*""/);
-  assert.match(config, /consentConfigured:\s*false/);
+  assert.match(config, /consentConfigured:\s*true/);
 });
 
 test("robots.txt, ads.txt et sitemap.xml sont servis avec le bon type", async (t) => {
@@ -176,7 +176,7 @@ test("les emplacements partenaires n'existent que sur les pages de dilemmes et d
   assert.match(robots.body, /Disallow: \/partner-frame/);
   const config = readFileSync(new URL("../public/ad-config.js", import.meta.url), "utf8");
   assert.match(config, /partnerBanners:\s*\{\s*enabled:\s*true\s*\}/);
-  assert.match(config, /consentConfigured:\s*false/);
+  assert.match(config, /consentConfigured:\s*true/);
 });
 
 test("la bannière native et le rapport de remplissage sont servis dans la page-cadre", async (t) => {
