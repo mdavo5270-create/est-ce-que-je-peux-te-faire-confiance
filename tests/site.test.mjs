@@ -119,3 +119,62 @@ test("les pages légales utilisent l'éditeur et le contact configurés", async 
   assert.match(privacy.body, /Google AdSense/);
   assert.match(privacy.body, /bonjour@exemple\.fr/);
 });
+
+test("la page-cadre des bannières partenaires est isolée et strictement validée", async (t) => {
+  const base = await startServer(t);
+  const response = await fetch(base + "/partner-frame?size=728x90");
+  const html = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type"), /^text\/html/);
+  assert.equal(response.headers.get("x-frame-options"), "SAMEORIGIN");
+  const csp = response.headers.get("content-security-policy");
+  assert.match(csp, /frame-ancestors 'self'/);
+  assert.match(csp, /default-src 'none'/);
+  assert.ok(!/'unsafe-inline'/.test(csp.match(/script-src[^;]*/)[0]), "aucun script en ligne sans nonce");
+  const nonce = csp.match(/'nonce-([^']+)'/)[1];
+  assert.ok(html.includes('<script nonce="' + nonce + '">'));
+  assert.match(html, /atOptions = \{"key":"332ae698604f3bced85e4b478b415e2d","format":"iframe","height":90,"width":728/);
+  assert.ok(html.includes('src="https://bauval.org/22/332ae698604f3bced85e4b478b415e2d"'));
+  assert.ok(!html.includes("googlesyndication"), "pas de vérificateur AdSense dans la page-cadre");
+  const second = await fetch(base + "/partner-frame?size=728x90");
+  assert.notEqual(second.headers.get("content-security-policy"), csp, "un nonce neuf à chaque réponse");
+  for (const size of ["", "1x1", "728x90 ", "__proto__", "constructor", "300x250;x", "<script>"]) {
+    const bad = await fetch(base + "/partner-frame?size=" + encodeURIComponent(size));
+    assert.equal(bad.status, 404, JSON.stringify(size));
+  }
+  assert.equal((await fetch(base + "/partner-frame")).status, 404);
+});
+
+test("les six tailles de bannière existent et les pages du jeu peuvent afficher la page-cadre", async (t) => {
+  const base = await startServer(t);
+  for (const size of ["300x250", "320x50", "468x60", "160x300", "160x600", "728x90"]) {
+    assert.equal((await fetch(base + "/partner-frame?size=" + size)).status, 200, size);
+  }
+  const home = await fetch(base + "/");
+  assert.match(home.headers.get("content-security-policy"), /frame-src 'self' /);
+  assert.match(home.headers.get("content-security-policy"), /frame-ancestors 'none'/);
+});
+
+test("l'interrupteur PARTNER_BANNERS=off coupe les bannières partenaires", async (t) => {
+  const previous = process.env.PARTNER_BANNERS;
+  process.env.PARTNER_BANNERS = "off";
+  t.after(() => { if (previous === undefined) delete process.env.PARTNER_BANNERS; else process.env.PARTNER_BANNERS = previous; });
+  const base = await startServer(t);
+  assert.equal((await fetch(base + "/partner-frame?size=300x250")).status, 404);
+});
+
+test("les emplacements partenaires n'existent que sur les pages de dilemmes et d'articles", async (t) => {
+  const base = await startServer(t);
+  const roles = (html) => [...html.matchAll(/data-partner-slot="([^"]+)"/g)].map((m) => m[1]).sort().join(",");
+  assert.equal(roles((await get(base, "/dilemmes/" + scenarios[0].id)).body), "rail-left,rail-right,rectangle");
+  assert.equal(roles((await get(base, "/articles/" + articles[0].slug)).body), "rail-left,rail-right,rectangle");
+  assert.equal(roles((await get(base, "/dilemmes")).body), "banner,rail-left,rail-right");
+  for (const path of ["/", "/guide.html", "/articles", "/a-propos", "/confidentialite", "/contact", "/mentions-legales", "/introuvable"]) {
+    assert.equal(roles((await get(base, path)).body), "", path);
+  }
+  const robots = await get(base, "/robots.txt");
+  assert.match(robots.body, /Disallow: \/partner-frame/);
+  const config = readFileSync(new URL("../public/ad-config.js", import.meta.url), "utf8");
+  assert.match(config, /partnerBanners:\s*\{\s*enabled:\s*true\s*\}/);
+  assert.match(config, /consentConfigured:\s*false/);
+});

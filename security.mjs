@@ -97,7 +97,7 @@ export const contentSecurityPolicy = [
   "img-src 'self' data: https:",
   "font-src 'self' data:",
   "connect-src 'self' " + GOOGLE_ADS.join(" "),
-  "frame-src " + GOOGLE_ADS.join(" "),
+  "frame-src 'self' " + GOOGLE_ADS.join(" "),
   "manifest-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",

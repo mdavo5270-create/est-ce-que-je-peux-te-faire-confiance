@@ -7,6 +7,7 @@ import { personalQuestions, situations } from "./quiz-banks.mjs";
 import { scenarios } from "./scenarios.mjs";
 import { createRemoteStore } from "./remote-store.mjs";
 import { fillStaticHtml, renderNotFound, renderSitePage, siteContext } from "./site-pages.mjs";
+import { partnerEnabled, partnerFrameHtml, partnerFramePolicy, partnerUnit } from "./partner-banners.mjs";
 import {
   cleanName, clientIp, createRateLimiter, guestCookie, guestCookieName, isHttps, parseCookies, safeOrigin, securityHeaders
 } from "./security.mjs";
@@ -754,6 +755,23 @@ export function createGameServer({ dataFile = defaultDataFile, store = null, ini
 
       if (pathname.startsWith("/api/")) throw new HttpError(404, "Route introuvable.");
       if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "Méthode non prise en charge.");
+      if (pathname === "/partner-frame") {
+        // Page-cadre des bannières partenaires : politique CSP dédiée, affichable uniquement par le site lui-même.
+        const unit = partnerEnabled() ? partnerUnit(url.searchParams.get("size")) : null;
+        if (!unit) throw new HttpError(404, "Fichier introuvable.");
+        const nonce = randomBytes(16).toString("base64");
+        const data = Buffer.from(partnerFrameHtml(unit, nonce), "utf8");
+        response.writeHead(200, {
+          "content-type": "text/html; charset=utf-8",
+          "content-length": data.length,
+          "cache-control": "no-store",
+          "content-security-policy": partnerFramePolicy(nonce),
+          "x-frame-options": "SAMEORIGIN",
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "strict-origin-when-cross-origin"
+        });
+        return response.end(data);
+      }
       const sitePage = renderSitePage(pathname, siteContext(publicBaseUrl(request)));
       if (sitePage) return sendPage(response, sitePage);
       return serveStatic(request, response, pathname);

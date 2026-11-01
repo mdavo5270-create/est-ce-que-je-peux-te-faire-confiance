@@ -1,4 +1,4 @@
-.content-main{max-width:820px;width:100%;margin:0 auto;padding:34px 0 56px}
+.content-main{position:relative;max-width:820px;width:100%;margin:0 auto;padding:34px 0 56px}
 .site-nav{display:flex;align-items:center;gap:20px}.site-nav a{color:#4c5a4f;font-size:12px;font-weight:700;text-decoration:none}.site-nav a:hover{color:var(--ink)}
 .breadcrumb{margin:0 0 22px;color:var(--muted);font-size:12px}.breadcrumb a{color:#627454;text-decoration:none}.breadcrumb a:hover{text-decoration:underline}
 .prose{max-width:720px}.prose .display-title{font-size:clamp(34px,5.4vw,56px);margin:6px 0 20px}

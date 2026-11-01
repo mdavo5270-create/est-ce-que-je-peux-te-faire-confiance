@@ -125,6 +125,16 @@ Les annonces éditoriales sont placées sur l'accueil (`home-content`), le guide
 
 Google recommande de retirer les annonces de contenu des pages de jeu ou de les éloigner d'au moins 150 px; l'emplacement `game-play` garde 170 px de séparation et reste distinct des boutons. Les annonces H5 récompensées du Serpent nécessitent l'accès au programme H5 Games Ads; elles ne sont pas disponibles simplement parce que le site est validé. Voir les instructions Google sur [les règles AdSense](https://support.google.com/adsense/answer/23921?hl=fr), [les pages de jeux](https://support.google.com/adsense/answer/2768340?hl=fr), [H5 Games Ads](https://support.google.com/adsense/answer/1705831?hl=fr), [l'Ad Placement API](https://developers.google.com/ad-placement/apis/adbreak?hl=fr) et le [consentement des utilisateurs européens](https://support.google.com/adsense/answer/13554116?hl=fr).
 
+### Bannières d'un partenaire tiers
+
+Six formats de bannière (300×250, 320×50, 468×60, 160×300, 160×600, 728×90) d'un réseau tiers sont affichés **uniquement sur les pages de dilemmes, la liste des dilemmes et les articles** : un rectangle ou une bannière horizontale en bas de page, et deux colonnes latérales sur les écrans d'au moins 1240 px. Jamais dans le jeu, sur l'accueil, le guide ni les pages légales.
+
+- **Isolation.** Le code du partenaire n'est jamais collé dans les pages : il s'exécute dans `/partner-frame` (voir `partner-banners.mjs`), une page dédiée à sa propre politique CSP, affichée dans un `<iframe sandbox>` sans `allow-same-origin` ni redirection de la page. Il ne peut donc lire ni le stockage, ni les cookies, ni les parties. La CSP des autres pages reste inchangée, à part `frame-src 'self'`.
+- **Activation.** Rien ne se charge tant qu'AdSense et `consentConfigured` ne sont pas valides dans `public/ad-config.js` ; `partnerBanners.enabled` peut aussi être mis à `false`.
+- **Coupure d'urgence.** Définir `PARTNER_BANNERS=off` sur l'hébergeur : la page-cadre répond 404 et plus aucune bannière ne s'affiche.
+- **Avant d'activer le consentement :** ajouter ce partenaire au message de consentement, et vérifier ses règles (public jeune, contenus pour adultes). Les formats pop-under, push, redirections et liens directs ne sont volontairement pas pris en charge.
+- Une bannière non remplie par le réseau laisse un espace vide de la taille du format : le cadre ne peut pas le signaler.
+
 ## Contenu
 
 La banque actuelle comprend 110 dilemmes. Le fichier [120-dilemmes-a-evaluer.md](120-dilemmes-a-evaluer.md) est conservé pour la prochaine réécriture et l'évaluation par Claude; les textes pourront être remplacés ensuite sans changer les règles du jeu. Les choix éditoriaux et les références générales sont dans [SOURCES.md](SOURCES.md).

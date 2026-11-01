@@ -11,6 +11,9 @@
 //    valeur est false, les unités display et les annonces récompensées restent désactivées.
 // 4. h5GamesEnabled : passer à true uniquement après acceptation au programme AdSense H5 Games Ads.
 //
+// 5. partnerBanners.enabled : bannières d'un partenaire tiers (voir partner-banners.mjs), sur les seules pages
+//    de dilemmes et d'articles. Elles ne se chargent que si AdSense ET le consentement ci-dessus sont valides.
+//
 // Rien ne s'affiche sur localhost, ni tant que ces valeurs ne sont pas valides.
 window.GAME_ADS = {
   clientId: "ca-pub-1658775159189335",
@@ -18,5 +21,6 @@ window.GAME_ADS = {
   slots: {},
   consentConfigured: false,
   h5GamesEnabled: false,
-  testMode: false
+  testMode: false,
+  partnerBanners: { enabled: true }
 };

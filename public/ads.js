@@ -81,6 +81,54 @@
     }).catch(() => deactivate(wrap));
   }
 
+  // --- Bannières d'un partenaire tiers : chargées dans un <iframe sandbox> isolé, jamais dans la page ---
+  const partnerSizeFor = (role) => {
+    const width = window.innerWidth;
+    if (role === "rectangle") return "300x250";
+    if (role === "rail-left") return width >= 1240 ? "160x600" : "";
+    if (role === "rail-right") return width >= 1240 ? "160x300" : "";
+    if (role === "banner") return width >= 760 ? "728x90" : width >= 500 ? "468x60" : "320x50";
+    return "";
+  };
+
+  function mountPartner(slot) {
+    if (slot.dataset.partnerState) return;
+    const wrap = slot.closest(".ad-wrap, .partner-rail");
+    const size = partnerSizeFor(slot.dataset.partnerSlot);
+    if (!/^[0-9]{2,3}x[0-9]{2,3}$/.test(size)) { deactivate(wrap); return; }
+    const [width, height] = size.split("x").map(Number);
+    slot.dataset.partnerState = "done";
+    slot.style.minHeight = height + "px";
+    const frame = document.createElement("iframe");
+    frame.src = "/partner-frame?size=" + size;
+    frame.width = String(width);
+    frame.height = String(height);
+    frame.title = "Publicité";
+    frame.loading = "lazy";
+    frame.setAttribute("scrolling", "no");
+    // Pas de allow-same-origin ni de redirection de la page : le code du partenaire ne peut rien lire du site.
+    frame.setAttribute("sandbox", "allow-scripts allow-popups allow-popups-to-escape-sandbox");
+    frame.style.cssText = "display:block;margin:0 auto;border:0;max-width:100%";
+    frame.addEventListener("error", () => deactivate(wrap));
+    slot.replaceChildren(frame);
+  }
+
+  function startPartner() {
+    if ((config.partnerBanners || {}).enabled !== true) return;
+    document.querySelectorAll("[data-partner-slot]").forEach((slot) => {
+      const wrap = slot.closest(".ad-wrap, .partner-rail");
+      if (!partnerSizeFor(slot.dataset.partnerSlot)) return;
+      wrap?.setAttribute("data-ad-active", "");
+      if (!("IntersectionObserver" in window)) { mountPartner(slot); return; }
+      const observer = new IntersectionObserver((entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        mountPartner(slot);
+      }, { rootMargin: "300px 0px" });
+      observer.observe(slot);
+    });
+  }
+
   let lazyObserver = null;
   function observeUnits(root) {
     if (!root) return;
@@ -98,6 +146,7 @@
 
   function init() {
     startConsent();
+    startPartner();
     if ("IntersectionObserver" in window) {
       // Chargement différé : l'annonce n'est demandée que lorsqu'elle approche de l'écran.
       lazyObserver = new IntersectionObserver((entries) => {

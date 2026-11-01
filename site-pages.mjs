@@ -32,6 +32,10 @@ export function footerLinks() {
 // Emplacement publicitaire : invisible tant que la publicité n'est pas configurée (voir public/ads.js).
 export const adWrap = (slot, scope = "content") => `<aside class="ad-wrap" data-ad-scope="${scope}" aria-label="Publicité"><p class="ad-label">Annonce</p><div class="ad-unit" data-ad-slot="${slot}"></div></aside>`;
 
+// Emplacements du partenaire tiers : invisibles tant que le consentement et partnerBanners ne sont pas actifs (public/ads.js).
+const partnerInline = (role) => `<aside class="ad-wrap" data-ad-scope="partner" aria-label="Publicité"><p class="ad-label">Annonce</p><div class="partner-unit" data-partner-slot="${role}"></div></aside>`;
+const partnerRails = () => `<aside class="partner-rail partner-rail-left" aria-label="Publicité"><p class="ad-label">Annonce</p><div class="partner-unit" data-partner-slot="rail-left"></div></aside><aside class="partner-rail partner-rail-right" aria-label="Publicité"><p class="ad-label">Annonce</p><div class="partner-unit" data-partner-slot="rail-right"></div></aside>`;
+
 export function homeFaqHtml() {
   return homeFaq.map((item) => `<details class="faq-item"><summary>${esc(item.q)}</summary><p>${esc(item.a)}</p></details>`).join("");
 }
@@ -52,7 +56,7 @@ export function fillStaticHtml(html, ctx) {
     .replaceAll("{{HOME_JSONLD}}", homeJsonLd(ctx));
 }
 
-function layout(ctx, { path, title, description, body, ld = [], robots = "index,follow,max-image-preview:large", ogType = "website", script = "" }) {
+function layout(ctx, { path, title, description, body, ld = [], robots = "index,follow,max-image-preview:large", ogType = "website", script = "", rails = false }) {
   const url = ctx.baseUrl + path;
   return `<!doctype html>
 <html lang="fr">
@@ -73,8 +77,8 @@ function layout(ctx, { path, title, description, body, ld = [], robots = "index,
     <meta name="twitter:card" content="summary" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css?v=3" />
-    <link rel="stylesheet" href="/ad.css?v=4" />
-    <link rel="stylesheet" href="/content.css?v=1" />
+    <link rel="stylesheet" href="/ad.css?v=5" />
+    <link rel="stylesheet" href="/content.css?v=2" />
     ${ld.map(jsonLd).join("\n    ")}
   </head>
   <body class="content-page">
@@ -85,6 +89,7 @@ function layout(ctx, { path, title, description, body, ld = [], robots = "index,
       </header>
       <main class="main-content content-main">
 ${body}
+${rails ? partnerRails() : ""}
       </main>
       <footer class="site-footer content-footer">
         <span>Un jeu de choix, pas un test de personnalité.</span>
@@ -92,7 +97,7 @@ ${body}
       </footer>
     </div>
     <script src="/ad-config.js?v=4"></script>
-    <script src="/ads.js?v=4" defer></script>${script}
+    <script src="/ads.js?v=5" defer></script>${script}
   </body>
 </html>
 `;
@@ -171,7 +176,8 @@ function dilemmaPage(ctx, current, index) {
           <h2 id="related-title">D'autres dilemmes du même niveau</h2>
           <ul class="link-list">${relatedDilemmas(current).map((item) => `<li><a href="/dilemmes/${item.id}">${esc(item.title)}</a><span>${esc(firstSentence(item.problem, 110))}</span></li>`).join("")}</ul>
           <p class="pager">${previous ? `<a href="/dilemmes/${previous.id}">← ${esc(previous.title)}</a>` : "<span></span>"}${next ? `<a href="/dilemmes/${next.id}">${esc(next.title)} →</a>` : ""}</p>
-        </section>`;
+        </section>
+        ${partnerInline("rectangle")}`;
   return layout(ctx, {
     path,
     title: `${current.title} · dilemme n°${number} | ${SITE}`,
@@ -179,6 +185,7 @@ function dilemmaPage(ctx, current, index) {
     body,
     ld: [breadcrumb(ctx, trail)],
     ogType: "article",
+    rails: true,
     script: `\n    <script src="/dilemme.js?v=1" defer></script>`
   });
 }
@@ -201,13 +208,15 @@ function dilemmaHub(ctx) {
         ${levels.slice(0, middle).map(list).join("")}
         ${adWrap("hub-middle")}
         ${levels.slice(middle).map(list).join("")}
+        ${partnerInline("banner")}
         ${playCta()}`;
   return layout(ctx, {
     path: "/dilemmes",
     title: `${scenarios.length} dilemmes à deux : partager ou tout prendre ? | ${SITE}`,
     description: `${scenarios.length} dilemmes à deux joueurs classés en cinq niveaux d'intensité. Lis la situation, choisis de partager ou de tout prendre et découvre les quatre issues possibles.`,
     body,
-    ld: [breadcrumb(ctx, trail), { "@context": "https://schema.org", "@type": "ItemList", name: "Dilemmes à deux", numberOfItems: scenarios.length, itemListElement: scenarios.map((item, i) => ({ "@type": "ListItem", position: i + 1, url: ctx.baseUrl + "/dilemmes/" + item.id, name: item.title })) }]
+    ld: [breadcrumb(ctx, trail), { "@context": "https://schema.org", "@type": "ItemList", name: "Dilemmes à deux", numberOfItems: scenarios.length, itemListElement: scenarios.map((item, i) => ({ "@type": "ListItem", position: i + 1, url: ctx.baseUrl + "/dilemmes/" + item.id, name: item.title })) }],
+    rails: true
   });
 }
 
@@ -233,13 +242,15 @@ function articlePage(ctx, article) {
         <section class="related" aria-labelledby="more-title">
           <h2 id="more-title">À lire aussi</h2>
           <ul class="link-list">${others.map((item) => `<li><a href="/articles/${item.slug}">${esc(item.title)}</a><span>${esc(item.description)}</span></li>`).join("")}<li><a href="/dilemmes">Les ${scenarios.length} dilemmes à deux</a><span>Lis les situations et choisis de partager ou de tout prendre.</span></li></ul>
-        </section>`;
+        </section>
+        ${partnerInline("rectangle")}`;
   return layout(ctx, {
     path,
     title: `${article.title} | ${SITE}`,
     description: article.description,
     body,
     ogType: "article",
+    rails: true,
     ld: [
       breadcrumb(ctx, trail),
       { "@context": "https://schema.org", "@type": "Article", headline: article.title, description: article.description, inLanguage: "fr", datePublished: LAST_UPDATE, dateModified: LAST_UPDATE, mainEntityOfPage: ctx.baseUrl + path, author: { "@type": "Organization", name: SITE }, publisher: { "@type": "Organization", name: SITE } }
@@ -364,6 +375,7 @@ function privacyPage(ctx) {
 <p>Le site peut afficher des annonces diffusées par Google AdSense. Dans ce cas, Google et ses partenaires peuvent utiliser des cookies ou des identifiants similaires, afin de diffuser et de mesurer des annonces, et de les personnaliser à partir de tes visites précédentes sur ce site ou sur d'autres sites, si tu y consens.</p>
 <p>Dans l'Espace économique européen, au Royaume-Uni et en Suisse, un message de consentement te permet d'accepter ou de refuser les annonces personnalisées. Tu peux modifier ton choix à tout moment avec le lien « Gérer mes choix publicitaires » en bas de page, lorsqu'il est affiché.</p>
 <p>Pour en savoir plus : <a href="https://policies.google.com/technologies/ads" rel="noopener noreferrer">comment Google utilise les données pour les annonces</a>. Tu peux aussi gérer les annonces personnalisées sur <a href="https://myadcenter.google.com" rel="noopener noreferrer">Mon Centre d'annonces</a>, ou consulter <a href="https://www.youronlinechoices.com" rel="noopener noreferrer">youronlinechoices.com</a>.</p>
+<p>Le site peut aussi afficher des bannières d'un partenaire publicitaire tiers, uniquement sur certaines pages de contenu (dilemmes et articles) et, lorsque la loi l'exige, après ton consentement. Elles s'affichent dans un cadre isolé qui n'a accès à aucune donnée du jeu. Les partenaires concernés sont listés dans le message de consentement.</p>
 <p>Aucune annonce n'est affichée pendant les choix du jeu ni sur les pages légales.</p>
 <h2>Durée de conservation</h2>
 <p>Les parties sont conservées sur le serveur tant que le service est actif, puis supprimées sur simple demande. Les données de navigation publicitaire sont gérées par Google selon ses propres règles.</p>
@@ -413,7 +425,7 @@ function adsTxt() {
 }
 
 function robotsTxt(ctx) {
-  return `User-agent: *\nAllow: /\nDisallow: /api/\n\nUser-agent: Mediapartners-Google\nAllow: /\n\nSitemap: ${ctx.baseUrl}/sitemap.xml\n`;
+  return `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /partner-frame\n\nUser-agent: Mediapartners-Google\nAllow: /\n\nSitemap: ${ctx.baseUrl}/sitemap.xml\n`;
 }
 
 export function sitePaths() {
