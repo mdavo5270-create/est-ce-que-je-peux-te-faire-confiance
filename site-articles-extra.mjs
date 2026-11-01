@@ -188,5 +188,47 @@ export const extraArticles = [
 <p>Pour que la conversation reste agréable, rappelez qu'il n'y a pas de mauvaise réponse et que chacun peut changer d'avis. Demandez « qu'est-ce qui t'a fait choisir cela ? » plutôt que « comment peux-tu penser ça ? ». Et laissez ceux qui ne veulent pas répondre passer leur tour. Notre guide pour <a href="/articles/animer-une-soiree-dilemmes">animer une soirée dilemmes</a> détaille ces conseils.</p>
 <p>Envie de passer de la théorie à la pratique ? Parcourez nos <a href="/dilemmes">dilemmes à deux</a>, ou <a href="/">lancez une partie</a> avec vos amis.</p>`
     ]
+  },
+  {
+    slug: "reparer-la-confiance-apres-une-deception",
+    title: "Réparer la confiance après une déception entre amis",
+    description: "Une promesse oubliée, un secret répété, un rendez-vous manqué : des repères simples pour comprendre ce qui s'est cassé et recommencer à se faire confiance.",
+    readMinutes: 5,
+    sections: [
+      `<p class="lead">La confiance met du temps à se construire et peut se fissurer en une phrase. Une promesse oubliée, un secret répété, un rendez-vous manqué sans explication : dans une amitié, ces petites déceptions laissent souvent plus de traces qu'on ne l'imagine. La bonne nouvelle, c'est que la confiance se répare, à condition de comprendre ce qui s'est réellement passé.</p>
+<p>Cet article ne prétend pas remplacer un accompagnement si la situation est grave. Il propose des repères simples pour les déceptions du quotidien.</p>`,
+      `<h2>Distinguer l'erreur de la trahison</h2>
+<p>Tout ne se vaut pas. Un ami qui oublie un anniversaire n'a pas le même poids qu'un ami qui répète un secret que vous lui aviez confié. Se demander « était-ce de la négligence, de la maladresse ou un choix ? » aide à ajuster sa réaction. La négligence se corrige avec de l'attention. La maladresse se corrige avec une explication. Un choix délibéré demande une vraie conversation.</p>
+<p>Il est aussi utile de séparer le fait de ce qu'on en a conclu. « Il n'a pas répondu à mon message » est un fait. « Il se moque de moi » est une interprétation, parfois juste, parfois non.</p>`,
+      `<h2>Dire les choses simplement</h2>
+<p>Pour en parler, mieux vaut décrire ce qui s'est passé et ce que cela a provoqué, plutôt que de juger la personne. « Quand j'ai appris que mon secret circulait, je me suis senti exposé » ouvre une conversation. « Tu es quelqu'un de peu fiable » la ferme. Choisir un moment calme, en face à face ou par un appel, évite les malentendus des messages écrits à chaud.</p>
+<p>Laisser l'autre répondre est tout aussi important. Il a peut-être une version des faits que vous ignorez, et vous gagnez à l'écouter avant de décider de la suite.</p>`,
+      `<h2>Ce que fait la personne qui a déçu</h2>
+<p>La réparation repose largement sur elle. Reconnaître l'erreur sans se justifier à l'excès, dire clairement ce qu'elle aurait dû faire, puis changer concrètement son comportement : c'est ce qui rend des excuses crédibles. Des mots seuls, répétés sans effet, usent la confiance au lieu de la restaurer.</p>
+<p>Celui qui a été déçu, de son côté, peut décider de redonner une chance par étapes : confier d'abord une petite chose, observer, puis élargir. La confiance revient rarement d'un seul bloc, elle se reconstruit par petites preuves.</p>`,
+      `<h2>Accepter que ce ne soit pas toujours possible</h2>
+<p>Certaines amitiés repartent plus solides après une épreuve. D'autres ne retrouvent pas leur place, et c'est aussi une issue légitime. Prendre de la distance n'est pas un échec si la relation vous fait du mal de façon répétée. L'important est que la décision soit choisie, pas subie.</p>`,
+      `<h2>Un jeu pour reprendre le fil</h2>
+<p>Quand la tension est retombée, une activité légère peut aider à retrouver de la complicité. Les <a href="/dilemmes">dilemmes à deux</a> de ce site donnent des occasions de parler de ce que chacun ferait, sans reproche. Pour comprendre la logique de la coopération et de la méfiance, lisez aussi notre article sur <a href="/articles/dilemme-du-prisonnier-explique">le dilemme du prisonnier</a>, ou <a href="/">lancez une partie</a> entre amis.</p>`
+    ]
+  },
+  {
+    slug: "partager-ou-tout-prendre-ce-que-revele-un-choix",
+    title: "Partager ou tout prendre : ce que révèle un choix, et ce qu'il ne dit pas",
+    description: "Pourquoi une réponse à un dilemme ne résume pas une personne, et comment s'en servir pour mieux se connaître sans se juger.",
+    readMinutes: 4,
+    sections: [
+      `<p class="lead">Face à un dilemme où l'on peut partager ou tout prendre, la tentation est grande de tirer une conclusion sur celui qui répond : généreux, calculateur, méfiant. Pourtant, une réponse isolée dit surtout quelque chose sur une situation précise, à un moment précis, avec une personne précise.</p>`,
+      `<h2>Une réponse dépend du contexte</h2>
+<p>La même personne peut partager sans hésiter avec un ami proche et garder davantage face à quelqu'un qu'elle connaît mal. Elle peut aussi changer de choix selon la fatigue, l'enjeu ou la manière dont la question est posée. C'est normal : nos décisions suivent des situations, pas seulement un caractère.</p>
+<p>Les chercheurs qui étudient la coopération insistent d'ailleurs sur ce point : les comportements varient fortement selon les contextes, et un résultat ne se généralise pas à toute une vie.</p>`,
+      `<h2>Ce que les raisons révèlent mieux que les choix</h2>
+<p>Deux amis qui partagent peuvent le faire pour des raisons opposées : l'un par générosité, l'autre par peur d'être mal vu. À l'inverse, celui qui garde tout peut le faire par prudence parce qu'on lui a déjà fait défaut. La question la plus riche n'est donc pas « qu'as-tu choisi ? » mais « pourquoi ? ». C'est dans l'explication que se glissent les valeurs, les expériences et les craintes de chacun.</p>`,
+      `<h2>Deviner l'autre, un indicateur de connaissance</h2>
+<p>Dans notre jeu, l'intérêt ne se limite pas à la décision : chaque ami essaie aussi de deviner ce que l'organisateur a répondu. Quand les prédictions tombent juste, cela montre qu'on connaît bien l'autre, pas qu'il est digne de confiance. Quand elles se trompent, c'est souvent l'occasion d'une belle discussion : « Je pensais que tu aurais gardé la somme. » « Pourquoi ? »</p>`,
+      `<h2>Quelques réflexes pour jouer sereinement</h2>
+<p>Rappelez avant de commencer qu'il n'y a pas de bonne réponse. Évitez de ressortir une réponse des semaines plus tard comme un argument. Laissez chacun s'expliquer et changer d'avis. Utilisez le jeu comme une porte d'entrée pour parler, pas comme un verdict.</p>
+<p>Pour prolonger, parcourez nos <a href="/dilemmes">dilemmes</a>, lisez <a href="/articles/pourquoi-partage-t-on">pourquoi on partage</a>, ou <a href="/">démarrez une partie</a>.</p>`
+    ]
   }
 ];
