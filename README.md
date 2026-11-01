@@ -133,7 +133,8 @@ Six formats de bannière (300×250, 320×50, 468×60, 160×300, 160×600, 728×9
 - **Activation.** Rien ne se charge tant qu'AdSense et `consentConfigured` ne sont pas valides dans `public/ad-config.js` ; `partnerBanners.enabled` peut aussi être mis à `false`.
 - **Coupure d'urgence.** Définir `PARTNER_BANNERS=off` sur l'hébergeur : la page-cadre répond 404 et plus aucune bannière ne s'affiche.
 - **Avant d'activer le consentement :** ajouter ce partenaire au message de consentement, et vérifier ses règles (public jeune, contenus pour adultes). Les formats pop-under, push, redirections et liens directs ne sont volontairement pas pris en charge.
-- Une bannière non remplie par le réseau laisse un espace vide de la taille du format : le cadre ne peut pas le signaler.
+- Une bannière non remplie par le réseau est masquée au bout de quelques secondes (la page-cadre envoie un rapport à la page). La bannière « native » (articles et liste des dilemmes) ajuste sa hauteur d'après ce même rapport.
+- **Pas de pop-under, de social bar ni de lien direct.** Ces formats doivent s'exécuter dans la page elle-même : ils auraient accès au `localStorage`, où se trouve le jeton de l'organisateur, et annuleraient la CSP du dépôt. Ils risquent en outre de faire filtrer toutes les annonces par Chrome.
 
 ## Contenu
 

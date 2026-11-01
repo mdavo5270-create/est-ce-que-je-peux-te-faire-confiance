@@ -147,7 +147,7 @@ test("la page-cadre des bannières partenaires est isolée et strictement valid�
 
 test("les six tailles de bannière existent et les pages du jeu peuvent afficher la page-cadre", async (t) => {
   const base = await startServer(t);
-  for (const size of ["300x250", "320x50", "468x60", "160x300", "160x600", "728x90"]) {
+  for (const size of ["300x250", "320x50", "468x60", "160x300", "160x600", "728x90", "native"]) {
     assert.equal((await fetch(base + "/partner-frame?size=" + size)).status, 200, size);
   }
   const home = await fetch(base + "/");
@@ -167,8 +167,8 @@ test("les emplacements partenaires n'existent que sur les pages de dilemmes et d
   const base = await startServer(t);
   const roles = (html) => [...html.matchAll(/data-partner-slot="([^"]+)"/g)].map((m) => m[1]).sort().join(",");
   assert.equal(roles((await get(base, "/dilemmes/" + scenarios[0].id)).body), "rail-left,rail-right,rectangle");
-  assert.equal(roles((await get(base, "/articles/" + articles[0].slug)).body), "rail-left,rail-right,rectangle");
-  assert.equal(roles((await get(base, "/dilemmes")).body), "banner,rail-left,rail-right");
+  assert.equal(roles((await get(base, "/articles/" + articles[0].slug)).body), "native,rail-left,rail-right,rectangle");
+  assert.equal(roles((await get(base, "/dilemmes")).body), "banner,native,rail-left,rail-right");
   for (const path of ["/", "/guide.html", "/articles", "/a-propos", "/confidentialite", "/contact", "/mentions-legales", "/introuvable"]) {
     assert.equal(roles((await get(base, path)).body), "", path);
   }
@@ -177,4 +177,18 @@ test("les emplacements partenaires n'existent que sur les pages de dilemmes et d
   const config = readFileSync(new URL("../public/ad-config.js", import.meta.url), "utf8");
   assert.match(config, /partnerBanners:\s*\{\s*enabled:\s*true\s*\}/);
   assert.match(config, /consentConfigured:\s*false/);
+});
+
+test("la bannière native et le rapport de remplissage sont servis dans la page-cadre", async (t) => {
+  const base = await startServer(t);
+  const response = await fetch(base + "/partner-frame?size=native");
+  const html = await response.text();
+  const nonce = response.headers.get("content-security-policy").match(/'nonce-([^']+)'/)[1];
+  assert.equal(response.status, 200);
+  assert.ok(html.includes('src="https://bauval.org/21/aec1867e4062f0b829d39caff819793f"'));
+  assert.ok(html.includes('<div id="container-aec1867e4062f0b829d39caff819793f"></div>'));
+  assert.ok(html.includes('<script nonce="' + nonce + '">(function(){'), "rapport de remplissage protégé par le nonce");
+  const fixed = await (await fetch(base + "/partner-frame?size=300x250")).text();
+  assert.ok(fixed.includes("partnerFrame:true"), "les formats fixes envoient aussi un rapport");
+  assert.ok(!html.includes("abscloud.org") && !html.includes("/14/") && !html.includes("araplhn.org"), "aucun pop-under, social bar ni lien direct");
 });

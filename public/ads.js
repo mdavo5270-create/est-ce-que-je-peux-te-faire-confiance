@@ -85,6 +85,7 @@
   const partnerSizeFor = (role) => {
     const width = window.innerWidth;
     if (role === "rectangle") return "300x250";
+    if (role === "native") return "native";
     if (role === "rail-left") return width >= 1240 ? "160x600" : "";
     if (role === "rail-right") return width >= 1240 ? "160x300" : "";
     if (role === "banner") return width >= 760 ? "728x90" : width >= 500 ? "468x60" : "320x50";
@@ -95,26 +96,46 @@
     if (slot.dataset.partnerState) return;
     const wrap = slot.closest(".ad-wrap, .partner-rail");
     const size = partnerSizeFor(slot.dataset.partnerSlot);
-    if (!/^[0-9]{2,3}x[0-9]{2,3}$/.test(size)) { deactivate(wrap); return; }
-    const [width, height] = size.split("x").map(Number);
+    const native = size === "native";
+    if (!native && !/^[0-9]{2,3}x[0-9]{2,3}$/.test(size)) { deactivate(wrap); return; }
+    const [width, height] = native ? [0, 280] : size.split("x").map(Number);
     slot.dataset.partnerState = "done";
     slot.style.minHeight = height + "px";
     const frame = document.createElement("iframe");
     frame.src = "/partner-frame?size=" + size;
-    frame.width = String(width);
+    frame.setAttribute("width", native ? "100%" : String(width));
     frame.height = String(height);
     frame.title = "Publicité";
     frame.loading = "lazy";
+    frame.dataset.partnerFrame = native ? "auto" : "fixed";
     frame.setAttribute("scrolling", "no");
     // Pas de allow-same-origin ni de redirection de la page : le code du partenaire ne peut rien lire du site.
     frame.setAttribute("sandbox", "allow-scripts allow-popups allow-popups-to-escape-sandbox");
-    frame.style.cssText = "display:block;margin:0 auto;border:0;max-width:100%";
+    frame.style.cssText = "display:block;margin:0 auto;border:0;max-width:" + (native ? "728px;width:100%" : "100%");
     frame.addEventListener("error", () => deactivate(wrap));
     slot.replaceChildren(frame);
   }
 
+  // Rapports de la page-cadre : masque l'emplacement si le réseau ne remplit rien, ajuste la hauteur des natives.
+  function listenPartnerReports() {
+    window.addEventListener("message", (event) => {
+      const data = event.data;
+      if (!data || data.partnerFrame !== true) return;
+      const frame = [...document.querySelectorAll("iframe[data-partner-frame]")].find((item) => item.contentWindow === event.source);
+      if (!frame) return;
+      const wrap = frame.closest(".ad-wrap, .partner-rail");
+      if (data.filled !== true) { if (data.final === true) deactivate(wrap); return; }
+      if (frame.dataset.partnerFrame === "auto" && Number.isFinite(data.height)) {
+        const height = Math.max(60, Math.min(700, Math.round(data.height)));
+        frame.height = String(height);
+        frame.parentElement.style.minHeight = height + "px";
+      }
+    });
+  }
+
   function startPartner() {
     if ((config.partnerBanners || {}).enabled !== true) return;
+    listenPartnerReports();
     document.querySelectorAll("[data-partner-slot]").forEach((slot) => {
       const wrap = slot.closest(".ad-wrap, .partner-rail");
       if (!partnerSizeFor(slot.dataset.partnerSlot)) return;

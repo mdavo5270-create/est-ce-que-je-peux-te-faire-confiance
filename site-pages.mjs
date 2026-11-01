@@ -209,6 +209,7 @@ function dilemmaHub(ctx) {
         ${adWrap("hub-middle")}
         ${levels.slice(middle).map(list).join("")}
         ${partnerInline("banner")}
+        ${partnerInline("native")}
         ${playCta()}`;
   return layout(ctx, {
     path: "/dilemmes",
@@ -243,7 +244,8 @@ function articlePage(ctx, article) {
           <h2 id="more-title">À lire aussi</h2>
           <ul class="link-list">${others.map((item) => `<li><a href="/articles/${item.slug}">${esc(item.title)}</a><span>${esc(item.description)}</span></li>`).join("")}<li><a href="/dilemmes">Les ${scenarios.length} dilemmes à deux</a><span>Lis les situations et choisis de partager ou de tout prendre.</span></li></ul>
         </section>
-        ${partnerInline("rectangle")}`;
+        ${partnerInline("rectangle")}
+        ${partnerInline("native")}`;
   return layout(ctx, {
     path,
     title: `${article.title} | ${SITE}`,

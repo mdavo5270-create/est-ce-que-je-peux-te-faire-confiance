@@ -13,7 +13,9 @@ export const PARTNER_UNITS = Object.freeze({
   "468x60": Object.freeze({ key: "9370943f2b44ac30914a789ac7239821", width: 468, height: 60 }),
   "160x300": Object.freeze({ key: "a163328196b07694a5dc88fd213339fb", width: 160, height: 300 }),
   "160x600": Object.freeze({ key: "37119f0aa226874aa33d69a60b35da14", width: 160, height: 600 }),
-  "728x90": Object.freeze({ key: "332ae698604f3bced85e4b478b415e2d", width: 728, height: 90 })
+  "728x90": Object.freeze({ key: "332ae698604f3bced85e4b478b415e2d", width: 728, height: 90 }),
+  // Bannière « native » : hauteur variable, ajustée par le rapport de la page-cadre.
+  native: Object.freeze({ key: "aec1867e4062f0b829d39caff819793f", width: 728, height: 280, native: true })
 });
 
 export const partnerEnabled = (env = process.env) => !/^(0|off|false|no|non)$/i.test(String(env.PARTNER_BANNERS ?? "").trim());
@@ -37,12 +39,18 @@ export function partnerFramePolicy(nonce) {
 }
 
 export function partnerFrameHtml(unit, nonce) {
+  const container = "container-" + unit.key;
   const options = JSON.stringify({ key: unit.key, format: "iframe", height: unit.height, width: unit.width, params: {} });
+  const tag = unit.native
+    ? `<script async src="${PARTNER_SCRIPT_HOST}/21/${unit.key}"></script>\n<div id="${container}"></div>`
+    : `<script nonce="${nonce}">atOptions = ${options};</script>\n<script src="${PARTNER_SCRIPT_HOST}/22/${unit.key}"></script>`;
+  // Rapport envoyé à la page parente : l'annonce est-elle remplie, et quelle hauteur occupe-t-elle ?
+  const report = `(function(){var id=${JSON.stringify(unit.native ? container : "")};function filled(){var c=id&&document.getElementById(id);if(c)return c.childElementCount>0;return!!document.querySelector("body > :not(script):not(style)")}function send(final){try{parent.postMessage({partnerFrame:true,filled:filled(),height:Math.ceil(document.body.scrollHeight),final:!!final},"*")}catch(e){}}addEventListener("load",function(){send(false)});setTimeout(send,1500);setTimeout(send,4000);setTimeout(function(){send(true)},9000)})();`;
   return `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><style>html,body{margin:0;padding:0;overflow:hidden;background:transparent}</style></head>
+<html lang="fr"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><style>html,body{margin:0;padding:0;background:transparent}body{overflow:hidden}</style></head>
 <body>
-<script nonce="${nonce}">atOptions = ${options};</script>
-<script src="${PARTNER_SCRIPT_HOST}/22/${unit.key}"></script>
+${tag}
+<script nonce="${nonce}">${report}</script>
 </body></html>
 `;
 }
