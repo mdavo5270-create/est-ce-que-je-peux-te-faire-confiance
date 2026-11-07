@@ -118,6 +118,11 @@ const baseArticles = [
       `<h2>6. Choisissez le bon format</h2>
 <p>En petit groupe de trois ou quatre, la discussion à voix haute fonctionne très bien. Dès que vous êtes plus nombreux, ou si certains sont plus timides, laissez chacun répondre en privé, puis révélez les résultats. C'est exactement ce que permet notre jeu : l'organisateur prépare la partie, partage un lien, et chaque ami répond de son côté depuis son téléphone, sans voir les réponses des autres.</p>
 <p>Pour lancer une partie maintenant, rendez-vous sur <a href="/">la page du jeu</a>. Pour d'autres idées d'activités, consultez nos <a href="/articles/jeux-de-confiance-entre-amis">six jeux de confiance à faire entre amis</a>.</p>`,
+      `<h2>Un exemple de déroulé sur une soirée</h2>
+<p>Pour six personnes et environ une heure, un rythme simple fonctionne bien. Commencez par dix minutes de présentation des règles et un premier dilemme léger, pour que tout le monde se détende. Enchaînez ensuite trois dilemmes de niveau intermédiaire, avec deux minutes de discussion après chaque réponse. Gardez le dernier quart d'heure pour une situation plus intense, si le groupe est à l'aise, et terminez par un retour sur la soirée : quelles réponses ont surpris, lesquelles ont fait rire.</p>
+<p>Ce rythme laisse de la place aux silences et aux digressions, qui sont souvent les meilleurs moments. S'il fait tard ou si l'ambiance change, arrêtez-vous sans culpabiliser : mieux vaut finir sur une note agréable.</p>`,
+      `<h2>Adapter selon le groupe</h2>
+<p>Entre amis proches, on peut monter plus vite en intensité et aborder des situations plus sensibles. Entre collègues ou avec des personnes qui se connaissent peu, restez sur les premiers niveaux et privilégiez les questions légères. Avec des adolescents, choisissez des situations adaptées à leur âge et laissez-les s'exprimer sans jugement. Dans tous les cas, rappelez que le jeu décrit des situations fictives : on y teste des raisonnements, pas des personnes.</p>`,
       `<h2>Le mot de la fin</h2>
 <p>Une bonne soirée dilemmes laisse chacun avec un sourire, une anecdote et le sentiment de mieux connaître les autres. Si c'est le cas, c'est réussi, quels que soient les scores.</p>`
     ]

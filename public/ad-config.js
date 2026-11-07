@@ -22,5 +22,5 @@ window.GAME_ADS = {
   consentConfigured: true,
   h5GamesEnabled: false,
   testMode: false,
-  partnerBanners: { enabled: true }
+  partnerBanners: { enabled: false }
 };
