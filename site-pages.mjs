@@ -306,6 +306,12 @@ function aboutPage(ctx) {
     html: `<p class="lead">« ${esc(SITE_FULL)} » est un jeu en français pour téléphone et ordinateur : un organisateur prépare une partie, partage un lien, et chaque ami répond séparément à des dilemmes, des questions personnelles et des mises en situation.</p>
 <h2>Une démarche de jeu, pas de diagnostic</h2>
 <p>Le score d'une partie compare des choix dans un jeu. Il ne mesure ni la personnalité ni la fiabilité de quelqu'un. Les textes des dilemmes sont des créations originales écrites pour ce projet, avec un niveau d'intensité indiqué pour chaque situation.</p>
+<h2>Ce que contient le site</h2>
+<p>Le site rassemble le jeu lui-même, une bibliothèque de ${scenarios.length} dilemmes à deux classés en cinq niveaux d'intensité, la page <a href="/guide.html">Règles</a> qui détaille le score, et ${articles.length} <a href="/articles">articles</a> consacrés à la confiance, à la coopération et à la façon d'animer une soirée entre amis.</p>
+<h2>Comment les contenus sont écrits</h2>
+<p>Les dilemmes, les situations et les articles sont des textes originaux, rédigés pour ce projet. Les articles qui s'appuient sur des travaux de recherche (dilemme du prisonnier, jeu de la confiance, stratégie donnant-donnant, biens communs) en donnent une présentation vulgarisée et signalent leurs limites. Ils ne remplacent ni un cours ni un avis professionnel. Si tu repères une erreur ou une formulation maladroite, signale-la depuis la page <a href="/contact">Contact</a> : les corrections sont faites dès que possible et la date de dernière mise à jour du site est indiquée en bas des pages d'information.</p>
+<h2>Un site entretenu</h2>
+<p>Le contenu évolue : de nouveaux articles et de nouveaux dilemmes sont ajoutés régulièrement, et les textes existants sont relus et améliorés au fil des retours des joueurs.</p>
 <h2>Comment le site est financé</h2>
 <p>Le jeu est gratuit. Pour couvrir les frais d'hébergement, le site peut afficher des annonces Google AdSense sur ses pages d'information (dilemmes, articles, règles) et sur l'écran de résultats. Aucune annonce n'apparaît pendant les choix, ni à côté des boutons de réponse. Pour en savoir plus sur les données concernées, consulte la <a href="/confidentialite">politique de confidentialité</a>.</p>
 <h2>Nous contacter</h2>

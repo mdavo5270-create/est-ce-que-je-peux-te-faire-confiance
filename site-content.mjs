@@ -1,4 +1,5 @@
 import { extraArticles } from "./site-articles-extra.mjs";
+import { moreArticles } from "./site-articles-more.mjs";
 
 // Contenu éditorial du site : FAQ de l'accueil et articles de fond.
 // Textes originaux, sans interpolation : chaque entrée de `sections` est un bloc HTML.
@@ -129,6 +130,6 @@ const baseArticles = [
   }
 ];
 
-export const articles = [...baseArticles, ...extraArticles];
+export const articles = [...baseArticles, ...extraArticles, ...moreArticles];
 
 export const articleBySlug = new Map(articles.map((item) => [item.slug, item]));
